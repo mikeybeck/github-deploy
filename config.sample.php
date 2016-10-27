@@ -1,13 +1,15 @@
 <?php
 
 /*
-	BitBucket Sync (c) Alex Lixandru
+	GitHub Sync (c) Mikey Beck
+	https://github.com/mikeybeck/github-sync
 
+	Based on BitBucket Sync (c) Alex Lixandru
 	https://bitbucket.org/alixandru/bitbucket-sync
 
 	File: config.php
-	Version: 2.0.0
-	Description: Configuration file for BitBucket Sync script
+	Version: 0.1.0
+	Description: Configuration file for GitHub Sync script
 
 
 	This program is free software; you can redistribute it and/or
@@ -20,11 +22,11 @@
 	GNU General Public License for more details.
 */
 
-/** Configuration for BitBucket Sync. */
+/** Configuration for GitHub Sync. */
 $CONFIG = array(
 
 	/**
-	 * The location where to temporary store commit data sent by BitBucket's
+	 * The location where to temporary store commit data sent by GitHub's
 	 * Post Service hook. This is the location from where the deploy script
 	 * will read information about what files to synchronize. The folder
 	 * must exist on the web server and the process executing both the gateway
@@ -52,12 +54,15 @@ $CONFIG = array(
 	 * The default branch to use for getting the changed files, if no specific
 	 * per-project branch was configured below.
 	 */
-	'deployBranch' => 'master',
+	'deployBranch' => 'deploy',
 
-	/** The ID of an user with read access to project files */
+	/** The repo owner's GitHub ID (REQUIRED) */
+	'repoOwner' => '',
+
+	/** The ID of an user with read access to project files (NOT required UNLESS repo is private.) */
 	'apiUser' => '',
 
-	/** The password of {apiUser} account */
+	/** The password of {apiUser} account (Not required unless repo is private) */
 	'apiPassword' => '',
 
 	/** Whether to print operation details. Very useful, especially when setting up projects */
@@ -67,16 +72,16 @@ $CONFIG = array(
 	 * If requireAuthentication is set to 'true' a secret value
 	 * needs to be provided via an additional "key" URL parameter in script requests.
 	 *
-	 * While not required, bitbucket-sync is potentially left open to control
+	 * While not required, github-sync is potentially left open to control
 	 * by strangers should an authentication key not be set.
  	 *
 	 * Keys can be identical, or you can set unique values for each key.
 	 *
  	 * 'deployAuthKey' is typically used in the deploy URL
- 	 * Example: http://example.com/bitbucket-sync/deploy.php?key=value
+ 	 * Example: http://example.com/github-sync/deploy.php?key=value
  	 *
  	 * 'gatewayAuthKey' is typically used by the Post Service Hook.
- 	 * Example: http://example.com/bitbucket-sync/gateway.php?key=value
+ 	 * Example: http://example.com/github-sync/gateway.php?key=value
 	 *
 	 */
 	'requireAuthentication' => false,
@@ -90,9 +95,9 @@ $CONFIG = array(
  * REQUIRED:
  *
  * The location where the project files will be deployed when modified in the
- * BitBucket project, identified by the name of the BitBucket project.
+ * GitHub project, identified by the name of the GitHub project.
  * The following pattern is used: [project-name] => [path on the web-server].
- * This allows multiple BitBucket projects to be deployed to different
+ * This allows multiple GitHub projects to be deployed to different
  * locations on the web-server's file system.
  *
  * Multiple projects example:
@@ -109,7 +114,7 @@ $CONFIG = array(
  */
 
 $DEPLOY = array(
-    'my-project-name' => '/home/www/site/',
+    'project-name' => '/path/to/project-on-webserver/',
 );
 
 /**
@@ -128,6 +133,10 @@ $DEPLOY = array(
  * 	);
  *
  */
+
+$DEPLOY_BRANCH = array(
+ 		'project-name' => 'deploy-branch-name',
+);
 
 
 /* Omit PHP closing tag to help avoid accidental output */

@@ -26,13 +26,14 @@ This script requires PHP 5.3+ with **cURL** and **Zip** extensions enabled. It c
 
 ### Installation instructions ###
 
-  1. Get the source code for this script from [GitHub][], either using Git, or by downloading directly.
+  1. Get the source code for this script from [GitHub][GitHub], either using Git, or by downloading directly.
   2. Copy the source files to your web-server in a location which is accessible from the internet (usually `public_html`, or `www` folders).
   3. Rename `config.sample.php` file to `config.php` and adjust it with information related to your environment and GitHub projects that you want to keep in sync (see **Configuration** section).
-  4. Make sure all folders involved in the sync process are **write-accessible** (see `config.php` for details). The most important of all is your `commits` folder. You can test if this folder is writable by accessing the `gateway.php` script with `test` parameter in your browser (i.e. `http://mysite.ext/GitHub-sync/gateway.php?test`)
+  4. Make sure all folders involved in the sync process are **write-accessible** (see `config.php` for details). The most important of all is your `commits` folder. You can test if this folder is writable by accessing the `gateway.php` script with `test` parameter in your browser (i.e. `http://mysite.ext/github-sync/gateway.php?test`)
   5. Perform an initial import of each project, through which the project files are copied to the web-server file-system (see **Operation** section below).
-  6. Configure the GitHub projects to send commit information to your web server through the POST service hook. The hook must point to the `gateway.php` script (do this for each repository that needs to be synchronized!). [See more information][Hook] on how to create a service hook in GitHub. 
-  POST URL should be, for example, `http://mysite.ext/GitHub-sync/gateway.php`.
+  6. Configure the GitHub projects to send commit information to your web server through the webhook. The hook must point to the `gateway.php` script (do this for each repository that needs to be synchronized!). [See more information][Hook] on how to create a webhook in GitHub. 
+  POST URL should be, for example, `http://mysite.ext/github-sync/gateway.php`.
+  The `content type` should be `application/x-www-form-urlencoded`.
   7. Start pushing commits to your GitHub projects and see if the changes are reflected on your web server.
 
 
@@ -43,47 +44,45 @@ This script has two complementary modes of operation detailed below.
 ### 1. Full synchronization ###
 
 The script runs in this mode when it is accessed through the web-server and has the `setup` GET parameter specified in the URL (`deploy.php?setup=my-project-name`).  In this mode, the script will get the full repository from GitHub and deploy it locally. This is achieved through getting a zip archive of the project, extracting it locally and copying its contents over to the project location specified in the configuration file.
-This operation mode does not necessarily need a POST service hook to be defined in GitHub for the project and is generally suited for initial set-up of projects that will be kept in sync with this script.
+This operation mode does not necessarily need a webhook to be defined in GitHub for the project and is generally suited for initial set-up of projects that will be kept in sync with this script.
 
 
 #### Steps on how to get a project set up using full synchronization ####
 
-1. If your repository is called *my-project-name*, you need to define it in the `config.php` file and to specify, at least, a valid location, accessible for writing by the web server process. Optionally you can state the branch from which the deployment will be performed.
+1. If your repository is called *my-project-name*, you need to define it in the `config.php` file and to specify, at least, the repo owner's username and a valid location, accessible for writing by the web server process. Optionally you can state the branch from which the deployment will be performed.  The default deployment branch is 'deploy'.
 
-2. After this step, simply access the script `deploy.php` with the parameter `setup=my-project-name` (i.e. `http://mysite.ext/GitHub-sync/deploy.php?setup=my-project-name`). It is advisable to have *verbose mode* enabled in the configuration file, to see exactly what is happening.
-
-   By default, the script will attempt to get the project from a GitHub repository created under your name (i.e. if your user is `johndoe`, it will try to get the repository `johndoe/my-project-name`). If the project belongs to a team or to another user, use the URL parameter `team` to specify it. For example, accessing `http://mysite.ext/GitHub-sync/deploy.php?setup=my-project-name&team=doeteam` will fetch the project `doeteam/my-project-name`. Useful also for forks. Note: the team name (if any) is necessary only for full synchronization; for incremental sync the full repository path will be taken from the metadata coming in from the POST service hook.
+2. After this step, simply access the script `deploy.php` with the parameter `setup=my-project-name` (i.e. `http://mysite.ext/github-sync/deploy.php?setup=my-project-name`). It is advisable to have *verbose mode* enabled in the configuration file, to see exactly what is happening.
 
    Full synchronization mode also supports cleaning up the destination folder before attempting to import the zip archive. This can be done by specifying the `clean` URL parameter (i.e. `http://mysite.ext/GitHub-sync/deploy.php?setup=my-project-name&key=x&clean=1`). When this parameter is present, the contents of the project location folder (specified in the configuration file) will be deleted before performing the actual import. In order to enhance security, when cleaning is requested (through the `clean` parameter) , the `key` parameter must also be specified, with the correct value of _deploy_ authorization code (defined in `config.php`).
 
-   Once the import is complete, you can go on and setup the service hook in GitHub and start pushing changes to your project.
+   Once the import is complete, you can go on and setup the webhook in GitHub and start pushing changes to your project.
 
 
 
 ### 2. Commit synchronization ###
 
-This is the default mode which is used when the `deploy.php` script is accessed with no parameters in the URL. To work in this mode, the script needs to read the commit information received from GitHub, so a POST service hook **must be configured** before changes can be automatically synchronized. In this mode, the script updates only the files which have been modified in a commit. If a file is changed by multiple commits it will be deployed only once, with the latest content, thus reducing network traffic. The entire sync process is described below.
+This is the default mode which is used when the `deploy.php` script is accessed with no parameters in the URL. To work in this mode, the script needs to read the commit information received from GitHub, so a webhook **must be configured** before changes can be automatically synchronized. In this mode, the script updates only the files which have been modified in a commit. If a file is changed by multiple commits it will be deployed only once, with the latest content, thus reducing network traffic. The entire sync process is described below.
 
 
 #### The process flow of commit synchronization ####
 
 1. You make one or more commits and push to GitHub.
 
-2. GitHub receives the changes and checks for any service hooks configured for the project. Since there is a POST hook defined (see **Installation** section above), it makes a HTTP request (POST) to `gateway.php` script. This request contains information about the commits that were pushed (which files have been added, updated or deleted, what branches were affected, etc).
+2. GitHub receives the changes and checks for any webhooks configured for the project. Since there is a webhook defined (see **Installation** section above), it makes a HTTP request (POST) to `gateway.php` script. This request contains information about the commits that were pushed (which files have been added, updated or deleted, what branches were affected, etc).
 
 3. The `gateway.php` script records the request from GitHub in a file stored locally in `commits` folder. This file will then be read when performing the actual sync. Storing data in a local file allows retrying the synchronization in case of failure.
 
-4. You access the `deploy.php` script (i.e. by going to `http://mysite.ext/GitHub-sync/deploy.php` in your browser) or, depending on the configuration, the script is invoked automatically from `gateway.php`. This script will perform the actual synchronization by reading the local file with commit meta-data and requesting from GitHub the content of files which have been changed. It will then update the local project files, one by one. After all files are updated, the meta-data file from `commits` folder is deleted to prevent synchronizing the same changes again.
+4. You access the `deploy.php` script (i.e. by going to `http://mysite.ext/github-sync/deploy.php` in your browser) or, depending on the configuration, the script is invoked automatically from `gateway.php`. This script will perform the actual synchronization by reading the local file with commit meta-data and requesting from GitHub the content of files which have been changed. It will then update the local project files, one by one. After all files are updated, the meta-data file from `commits` folder is deleted to prevent synchronizing the same changes again.
 
 5. If synchronization fails, the commit files (containing the commit meta-data) are not deleted, but preserved for later processing. They can be processed again by specifying the `retry` GET parameter when invoking `deploy.php` (i.e. `deploy.php?retry`).
 
 Note: since files are updated one by one, there is a risk of having the website in an inconsistent state until all files are updated. It is recommended to trigger the actual synchronization (step 4) only when there is a low activity on the website.
 
-Important: if there are a lot of files added/changed/deleted in a commit, it is recommended to trigger a full synchronization, instead of an incremental one, due to the possibility for GitHub to truncate the list of files in the commit meta-data, which might lead to an incomplete deployment.
+Important: if there are a lot of files added/changed/deleted in a commit and deployment is found to be incomplete afterwards, it is recommended to trigger a full synchronization to fix this.
 
 
-  [GitHub]: https://GitHub.org/alixandru/GitHub-sync
-  [Hook]: https://confluence.atlassian.com/display/GitHub/POST+hook+management
+  [GitHub]: https://github.com/mikeybeck/github-sync
+  [Hook]: https://developer.github.com/webhooks/creating/
 
 
 ## Configuration ##
@@ -92,76 +91,34 @@ Firstly the script needs to have access to your GitHub project files through the
 
 Then the script needs to know where to put the files locally once they are fetched from the GitHub servers. The branch of the repository to deploy and a few other items can also be configured.
 
-Optionally, the scripts can be configured to require authorization in order to operate. Different authorization codes can be defined for the `gateway.php` script (which accepts commit information from GitHub) and for the `deploy.php` script (which triggers the synchronization). The key must be passed through the `key` URL parameter when accessing the scripts. i.e. `deploy.php?key=predefined-deploy-key` or `gateway.php?key=predefined-gw-key`. Note that the GitHub POST service hook must be updated with the correct URL in this case.
+Optionally, the scripts can be configured to require authorization in order to operate. Different authorization codes can be defined for the `gateway.php` script (which accepts commit information from GitHub) and for the `deploy.php` script (which triggers the synchronization). The key must be passed through the `key` URL parameter when accessing the scripts. i.e. `deploy.php?key=predefined-deploy-key` or `gateway.php?key=predefined-gw-key`. Note that the GitHub webhook must be updated with the correct URL in this case.
 
 All of this information can be provided in the `config.php` file (initially included in the distribution as `config.sample.php`). Detailed descriptions of all configuration items is contained as comments in the file.
 
 **Important!** Make sure all folders specified in the `config.php` have write permission for the user under which the web-server process runs. This is mandatory in order for the script to be able to store commit meta-data files locally.
 
-## Important Notice Regarding GitHub Services ##
 
-This script requires the POST service to be setup in order to be able to provide incremental (commit) synchronization. The new web-hooks service provided by GitHub is different from POST service and provides different data in the payload, which is insufficient for the script's way of operating (namely, the web-hooks payloads do not contain the list of modified files). This makes this script unusable with web-hooks.
-
-As long as the POST service is still provided by GitHub, this script will continue to function properly (using POST service integration).
 
 ## Change log ##
 
-**v2.2.3**
+**v0.1.0**
 
-* Correct issue with cURL and SSLv3. Contributed by [Benoit Lapointe](https://GitHub.org/triben)
-* More verbose in case errors occur
-* Added the possibility to test if the `commits` folder is writable
+* Initial release
+* Based on BitBucket Sync v2.2.3 (c) Alex Lixandru (https://bitbucket.org/alixandru/bitbucket-sync)
 
-
-**v2.2.2**
-
-* Empty folders which resulted from renamed files during deployment will be deleted
-* Code will skip own `GitHub-sync` folder when performing clean up (at full sync)
-* Corrected an issue which caused files modified on other branches to be needlessly deployed on the watched branch
-* Included an empty `commits` folder in the distribution
-* Changed `automaticDeployment` variable from `config.php` to `true` so that sync starts automatically by default
-* Renamed the configuration file to `config.sample.php`
-
-
-**v2.2.1**
-
-* Various fixes and improvements. Contributed by [n4r-c0m](https://GitHub.org/n4r-c0m).
-
-
-**v2.2.0**
-
-* Added the ability to require authorization when posting commit meta-data (through gateway.php) or when deploying (through deploy.php). Authorization can be done by specifying a previously established key when accessing the scripts. Contributed by [Juha Ryhanen](https://GitHub.org/ryhanen).
-
-
-**v2.1.0**
-
-* Added the ability to retry failed synchronizations.
-* Updated the documentation to make it more clear
-
-
-**v2.0.1**
-
-* Improved the full synchronization support.
-* Cleaning the destination before import is now an optional operation, triggered only by `clean` parameter
-* Fixed issue with branch which was not correctly determined if multiple branches were pushed
-
-
-**v2.0.0**
-
-* Implemented the ability to fully synchronize the project by getting the entire project content at once.
-
-
-**v1.0.0**
-
-* Initial public release, which supports only synchronizing files which were changed.
 
 
 
 ## Disclaimer ##
 This code has not been extensively tested on highly active, large GitHub projects. You should perform your own tests before using this on a live (production) environment for projects with a high number of updates.
 
-This code has been tested with Git repositories only, however Mercurial projects should theoretically work fine as well.
 
 
 ## License ##
 This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
+
+
+#Many many thanks:
+
+To Alex Lixandru, who's BitBucket Sync program this is heavily based on.
+The modifications I have made to port it to GitHub are very minor and I probably couldn't have come up with something like this myself.
