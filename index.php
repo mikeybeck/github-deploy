@@ -1,13 +1,15 @@
 <?php
 
 /*
-	BitBucket Sync (c) Alex Lixandru
+	GitHub Sync (c) Mikey Beck
+	https://github.com/mikeybeck/github-sync
 
+	Based on GitHub Sync (c) Alex Lixandru
 	https://bitbucket.org/alixandru/bitbucket-sync
 
 	File: index.php
-	Version: 1.0.0
-	Description: User interface for BitBucket Sync script
+	Version: 0.1.0
+	Description: User interface for GitHub Sync script
 
 
 	This program is free software; you can redistribute it and/or

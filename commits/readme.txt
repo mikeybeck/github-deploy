@@ -1,5 +1,5 @@
 This folder is where commit metadata is stored by the gateway.php script when
-Bitbucket's POST service hook is triggered.
+GitHub's POST webhook is triggered.
 
 Ideally, this folder should be placed out of reach from public (outside www or
 public_html directories).
