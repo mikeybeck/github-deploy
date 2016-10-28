@@ -68,16 +68,18 @@
  */
 
 
+ini_set('display_errors','On'); 
+ini_set('error_reporting', E_ALL);
+ini_set("log_errors", 1);
+
+
 require_once( 'config.php' );
 
 // For 4.3.0 <= PHP <= 5.4.0
-if (!function_exists('http_response_code'))
-{
-    function http_response_code($newcode = NULL)
-    {
+if (!function_exists('http_response_code')) {
+    function http_response_code($newcode = NULL)     {
         static $code = 200;
-        if($newcode !== NULL)
-        {
+        if($newcode !== NULL)         {
             header('X-PHP-Response-Code: '.$newcode, true, $newcode);
             if(!headers_sent())
                 $code = $newcode;
@@ -166,7 +168,6 @@ function syncFull($key, $repository) {
 	// extract contents
 	loginfo(" * Extracting archive to $zipLocation\n");
 	$zip = new ZipArchive;
-
 
 	if( $zip->open($zipLocation . $zipFile) === true ) {
 		$zip->extractTo($zipLocation);
@@ -292,6 +293,7 @@ function deployChangeSet( $postData ) {
 	// determine the destination of the deployment
 	if( array_key_exists($o->repository->name, $DEPLOY) ) {
 		$deployLocation = $DEPLOY[ $o->repository->name ] . (substr($DEPLOY[ $o->repository->name ], -1) == DIRECTORY_SEPARATOR ? '' : DIRECTORY_SEPARATOR);
+
 	} else {
 		// unknown repository ?
 		echo "    ! Repository not configured for sync: {$o->repository->name}\n";
@@ -313,7 +315,7 @@ function deployChangeSet( $postData ) {
 	if (substr($o->ref)) {
 		if (substr($o->ref, $neglength - 1) === "/" . $deployBranch) {
 		} else {
-			error_log('exiting - incorrect branch!');
+			error_log('exiting! Incorrect branch');
 			exit;
 		}
 	}
@@ -337,81 +339,82 @@ function deployChangeSet( $postData ) {
 	// loop through commits
 	foreach($o->commits as $commit) {
 		// Github post info doesn't include branch name so we assume it's correct...
-		// And this means we can't do the whole 'pending' thing.
+		// And this means we can't do the whole 'pending' thing. (maybe.  Dunno.  sorry.)
 		loginfo("    > Change-set: " . trim($commit->message) . "\n");
-		// if there are any pending files, merge them in
-		///$files_added = array_merge($pending_add, $commit->added);
-		///$files_removed = array_merge($pending_rem, $commit->removed);
-		///$files_modified = array_merge($pending_mod, $commit->modified);
+				$files_added = array_merge($pending_add, $commit->added);
+				$files_removed = array_merge($pending_rem, $commit->removed);
+				$files_modified = array_merge($pending_mod, $commit->modified);
 
-		// These two foreach loops ought to be combined really - TODO sometime
-		foreach ($files_added as $file) {
-			//add_mod_file($file_added);
-			if( empty($processed[$file]) ) {
-				$processed[$file] = 1; // mark as processed
-				$contents = getFileContents($baseUrl . $apiUrl . $repoUrl . $rawUrl . $branchUrl . $file);
-				if( $contents == 'Not Found' ) {
-					// try one more time just in case
-					$contents = getFileContents($baseUrl . $apiUrl . $repoUrl . $rawUrl . $branchUrl . $file);
-				}
-				
-				if( $contents != 'Not Found' && $contents !== false ) {
-					if( !is_dir( dirname($deployLocation . $file) ) ) {
-						// attempt to create the directory structure first
-						mkdir( dirname($deployLocation . $file), 0755, true );
+
+				foreach ($files_added as $file) {
+					//add_mod_file($file_added);
+					if( empty($processed[$file]) ) {
+						$processed[$file] = 1; // mark as processed
+						$contents = getFileContents($baseUrl . $apiUrl . $repoUrl . $rawUrl . $branchUrl . $file);
+						if( $contents == 'Not Found' ) {
+							// try one more time
+							$contents = getFileContents($baseUrl . $apiUrl . $repoUrl . $rawUrl . $branchUrl . $file);
+						}
+						
+						if( $contents != 'Not Found' && $contents !== false ) {
+							if( !is_dir( dirname($deployLocation . $file) ) ) {
+								// attempt to create the directory structure first
+								mkdir( dirname($deployLocation . $file), 0755, true );
+							}
+							file_put_contents( $deployLocation . $file, $contents );
+							loginfo("      - Synchronized $file\n");
+							
+						} else {
+							echo "      ! Could not get file contents for $file\n";
+							flush();
+						}
 					}
-					file_put_contents( $deployLocation . $file, $contents );
-					loginfo("      - Synchronized $file\n");
-					
-				} else {
-					echo "      ! Could not get file contents for $file\n";
-					flush();
 				}
-			}
-		}
-		foreach ($files_modified as $file) {
-			//add_mod_file($file_modded);
-			if( empty($processed[$file]) ) {
-				$processed[$file] = 1; // mark as processed
-				$contents = getFileContents($baseUrl . $apiUrl . $repoUrl . $rawUrl . $branchUrl . $file);
-				if( $contents == 'Not Found' ) {
-					// try one more time just in case
-					$contents = getFileContents($baseUrl . $apiUrl . $repoUrl . $rawUrl . $branchUrl . $file);
-				}
-				
-				if( $contents != 'Not Found' && $contents !== false ) {
-					if( !is_dir( dirname($deployLocation . $file) ) ) {
-						// attempt to create the directory structure first
-						mkdir( dirname($deployLocation . $file), 0755, true );
+				foreach ($files_modified as $file) {
+					//add_mod_file($file_modded);
+					if( empty($processed[$file]) ) {
+						$processed[$file] = 1; // mark as processed
+						$contents = getFileContents($baseUrl . $apiUrl . $repoUrl . $rawUrl . $branchUrl . $file);
+						if( $contents == 'Not Found' ) {
+							// try one more time
+							$contents = getFileContents($baseUrl . $apiUrl . $repoUrl . $rawUrl . $branchUrl . $file);
+						}
+						
+						if( $contents != 'Not Found' && $contents !== false ) {
+							if( !is_dir( dirname($deployLocation . $file) ) ) {
+								// attempt to create the directory structure first
+								mkdir( dirname($deployLocation . $file), 0755, true );
+							}
+							file_put_contents( $deployLocation . $file, $contents );
+							loginfo("      - Synchronized $file\n");
+							
+						} else {
+							echo "      ! Could not get file contents for $file\n";
+							flush();
+						}
 					}
-					file_put_contents( $deployLocation . $file, $contents );
-					loginfo("      - Synchronized $file\n");
-					
-				} else {
-					echo "      ! Could not get file contents for $file\n";
-					flush();
 				}
-			}
-		}
-		foreach ($files_removed as $file) {
-			//remove_file($file_removed);
-			unlink( $deployLocation . $file );
-			$processed[$file] = 0; // to allow for subsequent re-creating of this file
-			$rmdirs[dirname($deployLocation . $file)] = dirname($file);
-			loginfo("      - Removed $file\n");
-		}
-			
-		// clean pending files, if any
-		///$pending_add = array();
-		///$pending_rem = array();
-		///$pending_mod = array();
+				foreach ($files_removed as $file) {
+					//remove_file($file_removed);
+					unlink( $deployLocation . $file );
+					$processed[$file] = 0; // to allow for subsequent re-creating of this file
+					$rmdirs[dirname($deployLocation . $file)] = dirname($file);
+					loginfo("      - Removed $file\n");
+				}
+
+				
+			// clean pending files, if any
+			$pending_add = array();
+			$pending_rem = array();
+			$pending_mod = array();
 		
-		///} else {
+		//} else {
 			// unknown branch for now, keep these files
-		///	$files_added = array_merge($pending_add, $commit->added);
-		///	$files_removed = array_merge($pending_rem, $commit->removed);
-		///	$files_modified = array_merge($pending_mod, $commit->modified);
-		///}
+			//$pending = array_merge($pending, $commit->files);
+		//	$files_added = array_merge($pending_add, $commit->added);
+		//	$files_removed = array_merge($pending_rem, $commit->removed);
+		//	$files_modified = array_merge($pending_mod, $commit->modified);
+		//}
 	}
 	
 	return true;

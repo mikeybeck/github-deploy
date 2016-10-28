@@ -11,6 +11,9 @@ engines:
     enabled: true
   phpmd:
     enabled: true
+    checks:
+      CleanCode/ElseExpression:
+        enabled: false
 ratings:
   paths:
   - "**.inc"
