@@ -345,32 +345,9 @@ function deployChangeSet( $postData ) {
 				$files_removed = array_merge($pending_rem, $commit->removed);
 				$files_modified = array_merge($pending_mod, $commit->modified);
 
+				$files_added_and_modified = array_merge($files_added, $files_modified);
 
-				foreach ($files_added as $file) {
-					//add_mod_file($file_added);
-					if( empty($processed[$file]) ) {
-						$processed[$file] = 1; // mark as processed
-						$contents = getFileContents($baseUrl . $apiUrl . $repoUrl . $rawUrl . $branchUrl . $file);
-						if( $contents == 'Not Found' ) {
-							// try one more time
-							$contents = getFileContents($baseUrl . $apiUrl . $repoUrl . $rawUrl . $branchUrl . $file);
-						}
-						
-						if( $contents != 'Not Found' && $contents !== false ) {
-							if( !is_dir( dirname($deployLocation . $file) ) ) {
-								// attempt to create the directory structure first
-								mkdir( dirname($deployLocation . $file), 0755, true );
-							}
-							file_put_contents( $deployLocation . $file, $contents );
-							loginfo("      - Synchronized $file\n");
-							
-						} else {
-							echo "      ! Could not get file contents for $file\n";
-							flush();
-						}
-					}
-				}
-				foreach ($files_modified as $file) {
+				foreach ($files_added_and_modified as $file) {
 					//add_mod_file($file_modded);
 					if( empty($processed[$file]) ) {
 						$processed[$file] = 1; // mark as processed
