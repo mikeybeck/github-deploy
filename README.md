@@ -101,7 +101,7 @@ All of this information can be provided in the `config.php` file (initially incl
 
 ## Change log ##
 
-**v0.1.0**
+**v0.1.0-alpha**
 
 * Initial release
 * Based on BitBucket Sync v2.2.3 (c) Alex Lixandru (https://bitbucket.org/alixandru/bitbucket-sync)
