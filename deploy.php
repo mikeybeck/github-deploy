@@ -75,6 +75,11 @@ ini_set("log_errors", 1);
 
 require_once( 'config.php' );
 
+//global $config;
+$config = new Config();
+
+
+
 // For 4.3.0 <= PHP <= 5.4.0
 if (!function_exists('http_response_code')) {
     function http_response_code($newcode = NULL)     {
@@ -98,15 +103,15 @@ if (!isset($key)) {
 if(isset($_GET['setup']) && !empty($_GET['setup'])) {
 	# full synchronization
 	$repo = strip_tags(stripslashes(urldecode($_GET['setup'])));
-	syncFull($key, $repo);
+	syncFull($config, $key, $repo);
 	
 } else if(isset($_GET['retry'])) {
 	# retry failed synchronizations
-	syncChanges($key, true);
+	syncChanges($config, $key, true);
 	
 } else {
 	# commit synchronization
-	syncChanges($key);
+	syncChanges($config, $key);
 }
 
 
@@ -114,17 +119,20 @@ if(isset($_GET['setup']) && !empty($_GET['setup'])) {
  * Gets the full content of the repository and stores it locally.
  * See explanation at the top of the file for details.
  */
-function syncFull($key, $repository) {
-	global $CONFIG, $DEPLOY, $DEPLOY_BRANCH;
+function syncFull($config, $key, $repository) {
+	//global $CONFIG, $DEPLOY, $DEPLOY_BRANCH; //Dont think these are needed any more?
+	$deploy = $config->DEPLOY;
+	$deploy_branch = $config->DEPLOY_BRANCH;
+
 	$shouldClean = isset($_GET['clean']) && $_GET['clean'] == 1;
 
 	// check authentication key if authentication is required
-	if ( $shouldClean && $CONFIG[ 'deployAuthKey' ] == '' ) {
+	if ( $shouldClean && $config::DEPLOY_AUTH_KEY == '' ) {
 		// when cleaning, the auth key is mandatory, regardless of requireAuthentication flag
 		http_response_code(403);
 		echo " # Cannot clean right now. A non-empty deploy auth key must be defined for cleaning.";
 		return false;
-	} else if ( ($CONFIG[ 'requireAuthentication' ] || $shouldClean) && $CONFIG[ 'deployAuthKey' ] != $key ) {
+	} else if ( ($config::REQUIRE_AUTHENTICATION || $shouldClean) && $config::DEPLOY_AUTH_KEY != $key ) {
 		http_response_code(401);
 		echo " # Unauthorized." . ($shouldClean && empty($key) ? " The deploy auth key must be provided when cleaning." : "");
 		return false;
@@ -133,40 +141,40 @@ function syncFull($key, $repository) {
 	echo "<pre>\nGithub Sync - Full Deploy\n============================\n";
 	
 	// determine the destination of the deployment
-	if( array_key_exists($repository, $DEPLOY) ) {
-		$deployLocation = $DEPLOY[ $repository ] . (substr($DEPLOY[ $repository ], -1) == DIRECTORY_SEPARATOR ? '' : DIRECTORY_SEPARATOR);
+	if( array_key_exists($repository, $deploy) ) {
+		$deployLocation = $deploy[ $repository ] . (substr($deploy[ $repository ], -1) == DIRECTORY_SEPARATOR ? '' : DIRECTORY_SEPARATOR);
 	} else {
 		echo " # Unknown repository: $repository!";
 		return false;
 	}
 	
 	// determine from which branch to get the data
-	if( isset($DEPLOY_BRANCH) && array_key_exists($repository, $DEPLOY_BRANCH) ) {
-		$deployBranch = $DEPLOY_BRANCH[ $repository ];
+	if( isset($deploy_branch_arr) && array_key_exists($o->repository->name, $deploy_branch_arr) ) {
+		$deploy_branch = $deploy_branch_arr[ $o->repository->name ];
 	} else {
-		// use the default branch
-		$deployBranch = $CONFIG['deployBranch'];
+		// Use default branch
+		$deploy_branch = $config::DEPLOY_BRANCH;
 	}
 
 
 	// build URL to get the full archive
 	$baseUrl = 'https://github.com/';
-	$repoUrl = (!empty($_GET['team']) ? $_GET['team'] : $CONFIG['repoOwner']) . "/$repository/";
-	$branchUrl = 'archive/' . $deployBranch . '.zip';
+	$repoUrl = (!empty($_GET['team']) ? $_GET['team'] : $config::REPO_OWNER) . "/$repository/";
+	$branchUrl = 'archive/' . $deploy_branch . '.zip';
 
 	echo "repoUrl: " . $repoUrl . "\n";
 	echo "branchUrl: " . $branchUrl . "\n";
 	
 	// store the zip file temporary
 	$zipFile = 'full-' . time() . '-' . rand(0, 100);
-	$zipLocation = $CONFIG['commitsFolder'] . (substr($CONFIG['commitsFolder'], -1) == DIRECTORY_SEPARATOR ? '' : DIRECTORY_SEPARATOR);
+	$zipLocation = $config::COMMITS_FOLDER . (substr($config::COMMITS_FOLDER, -1) == DIRECTORY_SEPARATOR ? '' : DIRECTORY_SEPARATOR);
 
 	// get the archive
-	loginfo(" * Fetching archive from $baseUrl$repoUrl$branchUrl\n");
-	$result = getFileContents($baseUrl . $repoUrl . $branchUrl, $zipLocation . $zipFile);
+	loginfo($config, " * Fetching archive from $baseUrl$repoUrl$branchUrl\n");
+	$result = getFileContents($config, $baseUrl . $repoUrl . $branchUrl, $zipLocation . $zipFile);
 
 	// extract contents
-	loginfo(" * Extracting archive to $zipLocation\n");
+	loginfo($config, " * Extracting archive to $zipLocation\n");
 	$zip = new ZipArchive;
 
 	if( $zip->open($zipLocation . $zipFile) === true ) {
@@ -189,14 +197,14 @@ function syncFull($key, $repository) {
 	
 	// delete the old files, if instructed to do so
 	if( $shouldClean ) {
-		loginfo(" * Deleting old content from $deployLocation\n");
+		loginfo($config, " * Deleting old content from $deployLocation\n");
 		if( deltree($deployLocation) === false ) {
 			echo " # Unable to completely remove the old files from $deployLocation. Process will continue anyway!\n";
 		}
 	}
 	
 	// copy the contents over
-	loginfo(" * Copying new content to $deployLocation\n");
+	loginfo($config, " * Copying new content to $deployLocation\n");
 	if( cptree($zipLocation . $folder, $deployLocation) == false ) {
 		echo " # Unable to deploy the extracted files to $deployLocation. Deployment is incomplete!\n";
 		deltree($zipLocation . $folder, true);
@@ -205,7 +213,7 @@ function syncFull($key, $repository) {
 	}
 	
 	// clean up
-	loginfo(" * Cleaning up temporary files and folders\n");
+	loginfo($config, " * Cleaning up temporary files and folders\n");
 	deltree($zipLocation . $folder, true);
 	unlink($zipLocation . $zipFile);
 	
@@ -217,13 +225,13 @@ function syncFull($key, $repository) {
  * Synchronizes changes from the commit files.
  * See explanation at the top of the file for details.
  */
-function syncChanges($key, $retry = false) {
-	global $CONFIG;
+function syncChanges($config, $key, $retry = false) {
+	//global $CONFIG;
 	global $processed;
 	global $rmdirs;
 	
 	// check authentication key if authentication is required
-	if ( $CONFIG[ 'requireAuthentication' ] && $CONFIG[ 'deployAuthKey' ] != $key) {
+	if ( $config::REQUIRE_AUTHENTICATION && $config::DEPLOY_AUTH_KEY != $key) {
 		http_response_code(401);
 		echo " # Unauthorized";
 		return false;
@@ -231,14 +239,14 @@ function syncChanges($key, $retry = false) {
 
 	echo "<pre>\nGitHub Sync\n==============\n";
 	
-	$prefix = $CONFIG['commitsFilenamePrefix'];
+	$prefix = $config::COMMITS_FILENAME_PREFIX;
 	if($retry) {
 		$prefix = "failed-$prefix";
 	}
 	
 	$processed = array();
 	$rmdirs = array();
-	$location = $CONFIG['commitsFolder'] . (substr($CONFIG['commitsFolder'], -1) == DIRECTORY_SEPARATOR ? '' : DIRECTORY_SEPARATOR);
+	$location = $config::COMMITS_FOLDER . (substr($config::COMMITS_FOLDER, -1) == DIRECTORY_SEPARATOR ? '' : DIRECTORY_SEPARATOR);
 	$commits = @scandir($location, 0);
 
 	if($commits)
@@ -249,7 +257,7 @@ function syncChanges($key, $retry = false) {
 			$json = @file_get_contents($location . $file);
 			$del = true;
 			echo " * Processing file $file\n";
-			if(!$json || !deployChangeSet( $json )) {
+			if(!$json || !deployChangeSet( $config, $json )) {
 				echo " # Could not process file $file!\n";
 				$del = false;
 			}
@@ -278,10 +286,14 @@ function syncChanges($key, $retry = false) {
 /**
  * Deploys commits to the file-system
  */
-function deployChangeSet( $postData ) {
-	global $CONFIG, $DEPLOY, $DEPLOY_BRANCH;
+function deployChangeSet( $config, $postData ) {
+	//global $CONFIG, $DEPLOY, $DEPLOY_BRANCH;
 	global $processed;
 	global $rmdirs;
+
+	$deploy = $config->DEPLOY;
+	$deploy_branch = '';
+	$deploy_branch_arr = $config->DEPLOY_BRANCH;
 	
 	$o = json_decode($postData);
 	if( !$o ) {
@@ -291,8 +303,8 @@ function deployChangeSet( $postData ) {
 	}
 	
 	// determine the destination of the deployment
-	if( array_key_exists($o->repository->name, $DEPLOY) ) {
-		$deployLocation = $DEPLOY[ $o->repository->name ] . (substr($DEPLOY[ $o->repository->name ], -1) == DIRECTORY_SEPARATOR ? '' : DIRECTORY_SEPARATOR);
+	if( array_key_exists($o->repository->name, $deploy) ) {
+		$deployLocation = $deploy[ $o->repository->name ] . (substr($deploy[ $o->repository->name ], -1) == DIRECTORY_SEPARATOR ? '' : DIRECTORY_SEPARATOR);
 
 	} else {
 		// unknown repository ?
@@ -301,19 +313,20 @@ function deployChangeSet( $postData ) {
 	}
 	
 	// determine from which branch to get the data
-	if( isset($DEPLOY_BRANCH) && array_key_exists($o->repository->name, $DEPLOY_BRANCH) ) {
-		$deployBranch = $DEPLOY_BRANCH[ $o->repository->name ];
+	if( isset($deploy_branch_arr) && array_key_exists($o->repository->name, $deploy_branch_arr) ) {
+		$deploy_branch = $deploy_branch_arr[ $o->repository->name ];
 	} else {
-		// use the default branch
-		$deployBranch = $CONFIG['deployBranch'];
+		// Use default branch
+		$deploy_branch = $config::DEPLOY_BRANCH;
 	}
+
 
 	// Determine if correct branch pushed to.  If not, exit.
 	// Test if deploy branch name is at end of ref
-	$neglength = strlen($deployBranch) * -1;
+	$neglength = strlen($deploy_branch) * -1;
 
-	if (substr($o->ref)) {
-		if (substr($o->ref, $neglength - 1) === "/" . $deployBranch) {
+	if (isset($o->ref)) {
+		if (substr($o->ref, $neglength - 1) === "/" . $deploy_branch) {
 		} else {
 			error_log('exiting! Incorrect branch');
 			exit;
@@ -328,7 +341,7 @@ function deployChangeSet( $postData ) {
 	$apiUrl = '/';
 	$repoUrl = $o->repository->full_name;           # mikeybeck/test-deploy
 	$rawUrl = '/';
-	$branchUrl = $deployBranch . "/";
+	$branchUrl = $deploy_branch . "/";
 
 
 	// prepare to get the files
@@ -340,7 +353,7 @@ function deployChangeSet( $postData ) {
 	foreach($o->commits as $commit) {
 		// Github post info doesn't include branch name so we assume it's correct...
 		// And this means we can't do the whole 'pending' thing. (maybe.  Dunno.  sorry.)
-		loginfo("    > Change-set: " . trim($commit->message) . "\n");
+		loginfo($config, "    > Change-set: " . trim($commit->message) . "\n");
 				$files_added = array_merge($pending_add, $commit->added);
 				$files_removed = array_merge($pending_rem, $commit->removed);
 				$files_modified = array_merge($pending_mod, $commit->modified);
@@ -351,10 +364,10 @@ function deployChangeSet( $postData ) {
 					//add_mod_file($file_modded);
 					if( empty($processed[$file]) ) {
 						$processed[$file] = 1; // mark as processed
-						$contents = getFileContents($baseUrl . $apiUrl . $repoUrl . $rawUrl . $branchUrl . $file);
+						$contents = getFileContents($config, $baseUrl . $apiUrl . $repoUrl . $rawUrl . $branchUrl . $file);
 						if( $contents == 'Not Found' ) {
 							// try one more time
-							$contents = getFileContents($baseUrl . $apiUrl . $repoUrl . $rawUrl . $branchUrl . $file);
+							$contents = getFileContents($config, $baseUrl . $apiUrl . $repoUrl . $rawUrl . $branchUrl . $file);
 						}
 						
 						if( $contents != 'Not Found' && $contents !== false ) {
@@ -363,7 +376,7 @@ function deployChangeSet( $postData ) {
 								mkdir( dirname($deployLocation . $file), 0755, true );
 							}
 							file_put_contents( $deployLocation . $file, $contents );
-							loginfo("      - Synchronized $file\n");
+							loginfo($config, "      - Synchronized $file\n");
 							
 						} else {
 							echo "      ! Could not get file contents for $file\n";
@@ -376,7 +389,7 @@ function deployChangeSet( $postData ) {
 					unlink( $deployLocation . $file );
 					$processed[$file] = 0; // to allow for subsequent re-creating of this file
 					$rmdirs[dirname($deployLocation . $file)] = dirname($file);
-					loginfo("      - Removed $file\n");
+					loginfo($config, "      - Removed $file\n");
 				}
 
 				
@@ -401,9 +414,9 @@ function deployChangeSet( $postData ) {
 /**
  * Gets a remote file contents using CURL
  */
-function getFileContents($url, $writeToFile = false) {
+function getFileContents($config, $url, $writeToFile = false) {
 
-	global $CONFIG;
+	//global $CONFIG;
 	
 	// create a new cURL resource
 	$ch = curl_init();
@@ -425,9 +438,10 @@ function getFileContents($url, $writeToFile = false) {
 
 	curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/4.0 (compatible; MSIE 5.01; Windows NT 5.0)");
 	
-	curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC ) ;
-	if(!empty($CONFIG['apiUser'])) {
-		curl_setopt($ch, CURLOPT_USERPWD, $CONFIG['apiUser'] . ':' . $CONFIG['apiPassword']);
+	curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC );
+	$API_USER = $config::API_USER;
+	if(!empty($API_USER)) {
+		curl_setopt($ch, CURLOPT_USERPWD, $config::API_USER . ':' . $config::API_PASSWORD);
 	}
 	// Remove to leave curl choose the best version
 	//curl_setopt($ch, CURLOPT_SSLVERSION,3); 
@@ -477,7 +491,7 @@ function deltree($dir, $deleteParent = false) {
 	$cdir = $cdir . (substr($cdir, -1) == DIRECTORY_SEPARATOR ? '' : DIRECTORY_SEPARATOR);
 	$adir = $adir . (substr($adir, -1) == DIRECTORY_SEPARATOR ? '' : DIRECTORY_SEPARATOR);
 	if( $cdir == $adir ) {
-		loginfo(" * Contents of '" . basename($adir) . "' folder will not be cleaned up.\n");
+		loginfo($config, " * Contents of '" . basename($adir) . "' folder will not be cleaned up.\n");
 		return true;
 	}
 	// process contents of this dir
@@ -498,9 +512,10 @@ function deltree($dir, $deleteParent = false) {
 /**
  * Outputs some information to the screen if verbose mode is enabled
  */
-function loginfo($message) {
-	global $CONFIG;
-	if( $CONFIG['verbose'] ) {
+function loginfo($config, $message) {
+	//global $CONFIG;
+
+	if( $config::VERBOSE ) {
 		echo $message;
 		flush();
 	}

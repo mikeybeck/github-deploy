@@ -30,7 +30,15 @@
 	see https://confluence.atlassian.com/display/BITBUCKET/POST+hook+management
  */
 
+ini_set('display_errors','On'); 
+ini_set('error_reporting', E_ALL);
+ini_set("log_errors", 1);
+ini_set("error_log", "/var/www/dev.ibestcreatine.com/htdocs/gh-sync/php-error.log");
+
+
 require_once( 'config.php' );
+
+$config = new Config();
 
 
 // For 4.3.0 <= PHP <= 5.4.0
@@ -47,8 +55,8 @@ if (!function_exists('http_response_code')) {
     }
 }
 
-$file = $CONFIG['commitsFilenamePrefix'] . time() . '-' . rand(0, 100);
-$location = $CONFIG['commitsFolder'] . (substr($CONFIG['commitsFolder'], -1) == '/' ? '' : '/');
+$file = $config::COMMITS_FILENAME_PREFIX. time() . '-' . rand(0, 100);
+$location = $config::COMMITS_FOLDER . (substr($config::COMMITS_FOLDER, -1) == '/' ? '' : '/');
 
 
 // Parse auhentication key from request
@@ -59,7 +67,7 @@ if(isset($_GET['key'])) {
 
 
 // check authentication key if authentication is required
-if ( !$CONFIG['requireAuthentication'] || $CONFIG[ 'requireAuthentication' ] && $CONFIG[ 'gatewayAuthKey' ] == $key) {
+if ( !$config::REQUIRE_AUTHENTICATION || $config::REQUIRE_AUTHENTICATION && $config::GATEWAY_AUTH_KEY == $key) {
 	if(!empty($_POST['payload'])) {
 		// store commit data
 		if (get_magic_quotes_gpc()) {
@@ -69,8 +77,8 @@ if ( !$CONFIG['requireAuthentication'] || $CONFIG[ 'requireAuthentication' ] && 
 		}
 		
 		// process the commit data right away
-		if($CONFIG['automaticDeployment']) {
-				$key = $CONFIG['deployAuthKey'];
+		if($config::AUTOMATIC_DEPLOYMENT) {
+				$key = $config::DEPLOY_AUTH_KEY;
 				require_once( 'deploy.php' );
 		}
 
