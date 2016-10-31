@@ -24,73 +24,71 @@
 
 
 /*
-	This script accepts commit information from GitHub. Commit information 
-	is automatically posted by GitHub after each push to a repository, 
-	through its Post Service Hook. For details on how to setup a service hook, 
-	see https://confluence.atlassian.com/display/BITBUCKET/POST+hook+management
+	This script accepts commit information from GitHub. Commit information
+	is automatically posted by GitHub after each push to a repository,
+	through its Post Service Hook. For details on how to setup a service hook,
+    see https://developer.github.com/webhooks/creating/
  */
 
-ini_set('display_errors','On'); 
-ini_set('error_reporting', E_ALL);
-ini_set("log_errors", 1);
-ini_set("error_log", "/var/www/dev.ibestcreatine.com/htdocs/gh-sync/php-error.log");
 
 
-require_once( 'config.php' );
+class Gateway {
 
-$config = new Config();
+    function __construct($config) {
+
+        $file = $config::COMMITS_FILENAME_PREFIX. time() . '-' . rand(0, 100);
+        $location = $config::COMMITS_FOLDER . (substr($config::COMMITS_FOLDER, -1) == '/' ? '' : '/');
+
+        // For 4.3.0 <= PHP <= 5.4.0
+        if (!function_exists('http_response_code')) {
+
+            function http_response_code($newcode = NULL) {
+                static $code = 200;
+                if($newcode !== NULL) {
+                    header('X-PHP-Response-Code: '.$newcode, true, $newcode);
+                    if(!headers_sent())
+                        $code = $newcode;
+                }
+                return $code;
+            }
+        }
+
+        // Parse authentication key from request
+        if(isset($_GET['key'])) {
+	        $key = strip_tags(stripslashes(urlencode($_GET['key'])));
+
+        } else $key = '';
+
+        // check authentication key if authentication is required
+        if ( !$config::REQUIRE_AUTHENTICATION || $config::REQUIRE_AUTHENTICATION && $config::GATEWAY_AUTH_KEY == $key) {
+            if(!empty($_POST['payload'])) {
+                // store commit data
+                if (get_magic_quotes_gpc()) {
+                    file_put_contents( $location . $file, stripslashes($_POST['payload']));
+                } else {
+                    file_put_contents( $location . $file, $_POST['payload']);
+                }
+
+                // process the commit data right away
+                if($config::AUTOMATIC_DEPLOYMENT) {
+				    $key = $config::DEPLOY_AUTH_KEY;
+				    require_once( 'deploy.php' );
+                }
 
 
-// For 4.3.0 <= PHP <= 5.4.0
-if (!function_exists('http_response_code')) {
+            } else if(isset($_GET['test'])) {
+                if(file_put_contents( $location . 'test', 'Files can be created by the gateway script.') === false) {
+                    echo "This script does not have access to create files in $location";
+                } else {
+                    echo "Files can be created by this script in $location";
+                }
+            }
+        }
+        else http_response_code(401);
 
-    function http_response_code($newcode = NULL) {
-        static $code = 200;
-        if($newcode !== NULL) {
-            header('X-PHP-Response-Code: '.$newcode, true, $newcode);
-            if(!headers_sent())
-                $code = $newcode;
-        }       
-        return $code;
     }
+
+
 }
-
-$file = $config::COMMITS_FILENAME_PREFIX. time() . '-' . rand(0, 100);
-$location = $config::COMMITS_FOLDER . (substr($config::COMMITS_FOLDER, -1) == '/' ? '' : '/');
-
-
-// Parse auhentication key from request
-if(isset($_GET['key'])) {
-	$key = strip_tags(stripslashes(urlencode($_GET['key'])));
-
-} else $key = '';
-
-
-// check authentication key if authentication is required
-if ( !$config::REQUIRE_AUTHENTICATION || $config::REQUIRE_AUTHENTICATION && $config::GATEWAY_AUTH_KEY == $key) {
-	if(!empty($_POST['payload'])) {
-		// store commit data
-		if (get_magic_quotes_gpc()) {
-			file_put_contents( $location . $file, stripslashes($_POST['payload']));
-		} else {
-			file_put_contents( $location . $file, $_POST['payload']);
-		}
-		
-		// process the commit data right away
-		if($config::AUTOMATIC_DEPLOYMENT) {
-				$key = $config::DEPLOY_AUTH_KEY;
-				require_once( 'deploy.php' );
-		}
-
-		
-	} else if(isset($_GET['test'])) {
-		if(file_put_contents( $location . 'test', 'Files can be created by the gateway script.') === false) {
-			echo "This script does not have access to create files in $location";
-		} else {
-			echo "Files can be created by this script in $location";
-		}
-	}
-}
-else http_response_code(401);
 
 /* Omit PHP closing tag to help avoid accidental output */

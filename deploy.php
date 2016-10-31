@@ -171,7 +171,7 @@ function syncFull($config, $key, $repository) {
 
 	// get the archive
 	loginfo($config, " * Fetching archive from $baseUrl$repoUrl$branchUrl\n");
-	$result = getFileContents($config, $baseUrl . $repoUrl . $branchUrl, $zipLocation . $zipFile);
+	//$result = getFileContents($config, $baseUrl . $repoUrl . $branchUrl, $zipLocation . $zipFile);
 
 	// extract contents
 	loginfo($config, " * Extracting archive to $zipLocation\n");
@@ -198,7 +198,7 @@ function syncFull($config, $key, $repository) {
 	// delete the old files, if instructed to do so
 	if( $shouldClean ) {
 		loginfo($config, " * Deleting old content from $deployLocation\n");
-		if( deltree($deployLocation) === false ) {
+		if( deltree($config, $deployLocation) === false ) {
 			echo " # Unable to completely remove the old files from $deployLocation. Process will continue anyway!\n";
 		}
 	}
@@ -207,17 +207,18 @@ function syncFull($config, $key, $repository) {
 	loginfo($config, " * Copying new content to $deployLocation\n");
 	if( cptree($zipLocation . $folder, $deployLocation) == false ) {
 		echo " # Unable to deploy the extracted files to $deployLocation. Deployment is incomplete!\n";
-		deltree($zipLocation . $folder, true);
+		deltree($config, $zipLocation . $folder, true);
 		unlink($zipLocation . $zipFile);
 		return false;
 	}
 	
 	// clean up
 	loginfo($config, " * Cleaning up temporary files and folders\n");
-	deltree($zipLocation . $folder, true);
+	deltree($config, $zipLocation . $folder, true);
 	unlink($zipLocation . $zipFile);
 	
 	echo "\nFinished deploying $repository.\n</pre>";
+    return true;
 }
 
 
@@ -280,6 +281,7 @@ function syncChanges($config, $key, $retry = false) {
 		}
 	}
 	echo "\nFinished processing commits.\n</pre>";
+    return true;
 }
 
 
@@ -482,7 +484,7 @@ function cptree($dir, $dst) {
 /**
  * Deletes a directory recursively, no matter whether it is empty or not
  */
-function deltree($dir, $deleteParent = false) {
+function deltree($config, $dir, $deleteParent = false) {
 	if (!file_exists($dir)) return false;
 	if (!is_dir($dir) || is_link($dir)) return unlink($dir);
 	// prevent deletion of current directory
@@ -498,7 +500,7 @@ function deltree($dir, $deleteParent = false) {
 	$files = array_diff(scandir($dir), array('.','..'));
 	$sep = (substr($dir, -1) == DIRECTORY_SEPARATOR ? '' : DIRECTORY_SEPARATOR);
 	foreach ($files as $file) {
-		(is_dir("$dir$sep$file")) ? deltree("$dir$sep$file", true) : unlink("$dir$sep$file");
+		(is_dir("$dir$sep$file")) ? deltree("$config$dir$sep$file", true) : unlink("$dir$sep$file");
 	}
 
 	if($deleteParent) {

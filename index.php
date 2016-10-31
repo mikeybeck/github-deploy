@@ -24,14 +24,28 @@
 
 
 /*
-	This is empty for now to prevent web-server directory listing. Ideally, 
+	This is empty for now to prevent web-server directory listing. Ideally,
 	this file, along with the other related scripts should be protected by
 	Basic Authentication or other security mechanisms to prevent any
 	unauthorized use.
 */
 
+ini_set('display_errors','On');
+ini_set('error_reporting', E_ALL);
+ini_set("log_errors", 1);
+ini_set("error_log", "/var/www/dev.ibestcreatine.com/htdocs/gh-sync/php-error.log");
+
+
+require_once( 'config.php' );
+
+$config = new Config();
+
 // convenient shortcut to gateway.php file
 require_once( 'gateway.php' );
+
+$gateway = new Gateway($config);
+
+
 
 
 /* Omit PHP closing tag to help avoid accidental output */
