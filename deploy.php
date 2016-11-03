@@ -72,6 +72,8 @@ ini_set('display_errors','On');
 ini_set('error_reporting', E_ALL);
 ini_set("log_errors", 1);
 
+ini_set("error_log", "/var/www/dev.ibestcreatine.com/htdocs/gh-sync/php-error.log");
+
 
 require_once( 'config.php' );
 
@@ -171,7 +173,7 @@ function syncFull($config, $key, $repository) {
 
 	// get the archive
 	loginfo($config, " * Fetching archive from $baseUrl$repoUrl$branchUrl\n");
-	$result = getFileContents($config, $baseUrl . $repoUrl . $branchUrl, $zipLocation . $zipFile);
+	//$result = getFileContents($config, $baseUrl . $repoUrl . $branchUrl, $zipLocation . $zipFile);
 
 	// extract contents
 	loginfo($config, " * Extracting archive to $zipLocation\n");
@@ -214,7 +216,7 @@ function syncFull($config, $key, $repository) {
 	
 	// clean up
 	loginfo($config, " * Cleaning up temporary files and folders\n");
-	deltree($zipLocation . $folder, true);
+	//deltree($zipLocation . $folder, true);
 	unlink($zipLocation . $zipFile);
 	
 	echo "\nFinished deploying $repository.\n</pre>";
@@ -284,7 +286,7 @@ function syncChanges($config, $key, $retry = false) {
 
 
 /**
- * Deploys commits to the file-system
+ * Deploys commits to the file-system (i.e. to the commit directory)
  */
 function deployChangeSet( $config, $postData ) {
 	//global $CONFIG, $DEPLOY, $DEPLOY_BRANCH;
@@ -335,13 +337,14 @@ function deployChangeSet( $config, $postData ) {
 
 	
 	//URL looks something like: https://raw.githubusercontent.com/mikeybeck/test-deploy/master/
+	// OR https://api.github.com/repos/mikeybeck/repo-name/contents/wp-links-opml3.php (requires deploy branch to be default)
 
 	// build URL to get the updated files
-	$baseUrl = "https://raw.githubusercontent.com";
+	$baseUrl = "https://api.github.com/repos";
 	$apiUrl = '/';
-	$repoUrl = $o->repository->full_name;           # mikeybeck/test-deploy
-	$rawUrl = '/';
-	$branchUrl = $deploy_branch . "/";
+	$repoUrl = $o->repository->full_name;           # repo-owner/repo-name
+	$rawUrl = '/contents';
+	$branchUrl = "/";
 
 
 	// prepare to get the files
@@ -360,11 +363,13 @@ function deployChangeSet( $config, $postData ) {
 
 				$files_added_and_modified = array_merge($files_added, $files_modified);
 
+				
 				foreach ($files_added_and_modified as $file) {
 					//add_mod_file($file_modded);
 					if( empty($processed[$file]) ) {
 						$processed[$file] = 1; // mark as processed
 						$contents = getFileContents($config, $baseUrl . $apiUrl . $repoUrl . $rawUrl . $branchUrl . $file);
+						error_log('contents ' . $contents);
 						if( $contents == 'Not Found' ) {
 							// try one more time
 							$contents = getFileContents($config, $baseUrl . $apiUrl . $repoUrl . $rawUrl . $branchUrl . $file);
@@ -384,6 +389,7 @@ function deployChangeSet( $config, $postData ) {
 						}
 					}
 				}
+				
 				foreach ($files_removed as $file) {
 					//remove_file($file_removed);
 					unlink( $deployLocation . $file );
@@ -415,16 +421,19 @@ function deployChangeSet( $config, $postData ) {
  * Gets a remote file contents using CURL
  */
 function getFileContents($config, $url, $writeToFile = false) {
-
-	//global $CONFIG;
 	
 	// create a new cURL resource
 	$ch = curl_init();
+
+	$url = $url . "?ref=deploy";
+	$url = str_replace(' ', '%20', $url); // This single line of code was the solution after *many* hours of debugging.  Please treat with due reverence.
 	
 	// set URL and other appropriate options
 	curl_setopt($ch, CURLOPT_URL, $url);
 	
-	curl_setopt($ch, CURLOPT_HEADER, false);
+	curl_setopt($ch, CURLOPT_HEADER, 0);
+	//curl_setopt($ch, CURLOPT_VERBOSE, 1);
+
 
     if ($writeToFile) {
         $out = fopen($writeToFile, "wb");
@@ -436,13 +445,24 @@ function getFileContents($config, $url, $writeToFile = false) {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     }
 
+
+    $headers = [
+	    'Accept: application/vnd.github.v3.raw'
+	];
+
+	curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+	// Set default user agent here in case no api user is set
 	curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/4.0 (compatible; MSIE 5.01; Windows NT 5.0)");
 	
 	curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC );
 	$API_USER = $config::API_USER;
 	if(!empty($API_USER)) {
 		curl_setopt($ch, CURLOPT_USERPWD, $config::API_USER . ':' . $config::API_PASSWORD);
+		curl_setopt($ch, CURLOPT_USERAGENT, $config::API_USER);
 	}
+
+
 	// Remove to leave curl choose the best version
 	//curl_setopt($ch, CURLOPT_SSLVERSION,3); 
 	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
@@ -451,15 +471,36 @@ function getFileContents($config, $url, $writeToFile = false) {
 	
 	// grab URL
 	$data = curl_exec($ch);
+	$data2 = (string) $data;
+
+	if(curl_exec($ch) === false) {
+		error_log( 'Curl error: ' . curl_error($ch));
+	}
+
+	if ($data2 == '404: Not Found') {
+		error_log("Token required! File at url " . $url . " not downloaded");
+	}
+
+	/**
+      * Check HTTP return status.
+      */
+     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+     $curl_info = curl_getinfo($ch);
+     if ($http_code != 200) {		                      		                          
+     	error_log('Cant\'t get file from URL '.$url.' - cURL error: '.curl_error($ch) . 'Http code: '. $http_code);
+     	error_log('More info: ' . print_r($curl_info, true));
+     }	
 	
 	if(curl_errno($ch) != 0) {
 		echo "      ! File transfer error: " . curl_error($ch) . "\n";
 	}
 	
+
 	// close cURL resource, and free up system resources
 	curl_close($ch);
 	
-	return $data;
+	return $data2;
+	
 }
 
 
