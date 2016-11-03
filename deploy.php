@@ -72,8 +72,6 @@ ini_set('display_errors','On');
 ini_set('error_reporting', E_ALL);
 ini_set("log_errors", 1);
 
-ini_set("error_log", "/var/www/dev.ibestcreatine.com/htdocs/gh-sync/php-error.log");
-
 
 require_once( 'config.php' );
 
@@ -337,7 +335,7 @@ function deployChangeSet( $config, $postData ) {
 
 	
 	//URL looks something like: https://raw.githubusercontent.com/mikeybeck/test-deploy/master/
-	// OR https://api.github.com/repos/mikeybeck/repo-name/contents/wp-links-opml3.php (requires deploy branch to be default)
+	// OR https://api.github.com/repos/mikeybeck/repo-name/contents/wp-links-opml3.php?ref=deploy  - ref param is the branch name
 
 	// build URL to get the updated files
 	$baseUrl = "https://api.github.com/repos";
