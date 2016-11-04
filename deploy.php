@@ -72,6 +72,8 @@ ini_set('display_errors','On');
 ini_set('error_reporting', E_ALL);
 ini_set("log_errors", 1);
 
+ini_set("error_log", "/var/www/dev.ibestcreatine.com/htdocs/gh-sync/php-error.log");
+
 
 require_once( 'config.php' );
 
@@ -334,15 +336,21 @@ function deployChangeSet( $config, $postData ) {
 	}
 
 	
-	//URL looks something like: https://raw.githubusercontent.com/mikeybeck/test-deploy/master/
-	// OR https://api.github.com/repos/mikeybeck/repo-name/contents/wp-links-opml3.php?ref=deploy  - ref param is the branch name
+	//URL looks something like: https://raw.githubusercontent.com/mikeybeck/test-deploy/master/ - this one doesn't seem to have the api limits
+	// OR https://api.github.com/repos/mikeybeck/repo-name/contents/wp-links-opml3.php?ref=branch-name - this one is limited to files >1mb
 
 	// build URL to get the updated files
-	$baseUrl = "https://api.github.com/repos";
+	//$baseUrl = "https://api.github.com/repos";
+	//$apiUrl = '/';
+	//$repoUrl = $o->repository->full_name;           # repo-owner/repo-name
+	//$rawUrl = '/contents';
+	//$branchUrl = "/";
+
+	$baseUrl = "https://raw.githubusercontent.com";
 	$apiUrl = '/';
 	$repoUrl = $o->repository->full_name;           # repo-owner/repo-name
-	$rawUrl = '/contents';
-	$branchUrl = "/";
+	$rawUrl = '/';
+	$branchUrl = $deploy_branch . "/";
 
 
 	// prepare to get the files
@@ -423,7 +431,7 @@ function getFileContents($config, $url, $writeToFile = false) {
 	// create a new cURL resource
 	$ch = curl_init();
 
-	$url = $url . "?ref=deploy";
+	//$url = $url . "?ref=deploy";
 	$url = str_replace(' ', '%20', $url); // This single line of code was the solution after *many* hours of debugging.  Please treat with due reverence.
 	
 	// set URL and other appropriate options
@@ -448,7 +456,7 @@ function getFileContents($config, $url, $writeToFile = false) {
 	    'Accept: application/vnd.github.v3.raw'
 	];
 
-	curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+	//curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
 	// Set default user agent here in case no api user is set
 	curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/4.0 (compatible; MSIE 5.01; Windows NT 5.0)");
