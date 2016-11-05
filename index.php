@@ -72,9 +72,29 @@
 	unauthorized use.
 */
 
+ini_set('display_errors','On');
+ini_set('error_reporting', E_ALL);		
+ini_set("log_errors", 1);		
+		
+ini_set("error_log", "php-error.log");
+
+
 require_once( 'config.php' );
 
 $config = new Config();
+
+$key = '';
+if (isset($_GET['key']) && !empty($_GET['key'])) {
+	$key = strip_tags(stripslashes(urlencode($_GET['key'])));
+}
+
+$setupRepo = '';
+if (isset($_GET['setup'])) {
+	$setupRepo = strip_tags(stripslashes(urlencode($_GET['setup'])));
+	require_once( 'deploy.php' );
+	$deploy = new Deploy($config);
+	$deploy->run($setupRepo, $key);
+}
 
 
 
@@ -83,7 +103,7 @@ require_once( 'gateway.php' );
 
 $gateway = new Gateway($config);
 
-$gateway->run();
+$gateway->run($setupRepo, $key);
 
 
 /* Omit PHP closing tag to help avoid accidental output */

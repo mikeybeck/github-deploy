@@ -50,9 +50,7 @@ Class Gateway {
     }
 	//}
 
-	function run() {
-
-		//error_log(print_r($this->config, true));
+	function run($setupRepo = '', $key = '') {
 
 		$config = $this->config;
 
@@ -60,11 +58,9 @@ Class Gateway {
 		$location = $config::COMMITS_FOLDER . (substr($config::COMMITS_FOLDER, -1) == '/' ? '' : '/');
 
 
-		// Parse auhentication key from request
-		if(isset($_GET['key'])) {
-			$key = strip_tags(stripslashes(urlencode($_GET['key'])));
-
-		} else $key = '';
+		if(isset($key) && !empty($key)) {
+			$key = strip_tags(stripslashes(urlencode($key)));
+		}
 
 
 		// check authentication key if authentication is required
@@ -82,7 +78,7 @@ Class Gateway {
 						$key = $config::DEPLOY_AUTH_KEY;
 						require_once( 'deploy.php' );
 						$deploy = new Deploy($config);
-						$deploy->run();
+						$deploy->run($setupRepo, $key);
 				}
 
 				

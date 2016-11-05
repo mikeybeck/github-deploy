@@ -39,21 +39,19 @@ Class Deploy {
         return $code;
     }
 
-
-    function run() {
+    function run($setupRepo = '', $key = '') {
 
     	$config = $this->config;
 
-		if (!isset($key)) {
-			if(isset($_GET['key'])) {
-				$key = strip_tags(stripslashes(urlencode($_GET['key'])));
+//		if (!isset($key)) {
+			if(isset($key) && !empty($key)) {
+				$key = strip_tags(stripslashes(urlencode($key)));
+			}
+//		}
 
-			} else $key = '';
-		}
-
-		if(isset($_GET['setup']) && !empty($_GET['setup'])) {
+		if(isset($setupRepo) && !empty($setupRepo)) {
 			# full synchronization
-			$repo = strip_tags(stripslashes(urldecode($_GET['setup'])));
+			$repo = strip_tags(stripslashes(urldecode($setupRepo)));
 			$this->syncFull($config, $key, $repo);
 			
 		} else if(isset($_GET['retry'])) {
@@ -123,11 +121,11 @@ Class Deploy {
 			$zipLocation = $config::COMMITS_FOLDER . (substr($config::COMMITS_FOLDER, -1) == DIRECTORY_SEPARATOR ? '' : DIRECTORY_SEPARATOR);
 
 			// get the archive
-			loginfo($config, " * Fetching archive from $baseUrl$repoUrl$branchUrl\n");
-			//$result = getFileContents($config, $baseUrl . $repoUrl . $branchUrl, $zipLocation . $zipFile);
+			$this->loginfo($config, " * Fetching archive from $baseUrl$repoUrl$branchUrl\n");
+			$result = $this->getFileContents($config, $baseUrl . $repoUrl . $branchUrl, $zipLocation . $zipFile);
 
 			// extract contents
-			loginfo($config, " * Extracting archive to $zipLocation\n");
+			$this->loginfo($config, " * Extracting archive to $zipLocation\n");
 			$zip = new ZipArchive;
 
 			if( $zip->open($zipLocation . $zipFile) === true ) {
@@ -150,23 +148,23 @@ Class Deploy {
 			
 			// delete the old files, if instructed to do so
 			if( $shouldClean ) {
-				loginfo($config, " * Deleting old content from $deployLocation\n");
+				$this->loginfo($config, " * Deleting old content from $deployLocation\n");
 				if( deltree($deployLocation) === false ) {
 					echo " # Unable to completely remove the old files from $deployLocation. Process will continue anyway!\n";
 				}
 			}
 			
 			// copy the contents over
-			loginfo($config, " * Copying new content to $deployLocation\n");
-			if( cptree($zipLocation . $folder, $deployLocation) == false ) {
+			$this->loginfo($config, " * Copying new content to $deployLocation\n");
+			if( $this->cptree($zipLocation . $folder, $deployLocation) == false ) {
 				echo " # Unable to deploy the extracted files to $deployLocation. Deployment is incomplete!\n";
-				deltree($zipLocation . $folder, true);
+				$this->deltree($zipLocation . $folder, true);
 				unlink($zipLocation . $zipFile);
 				return false;
 			}
 			
 			// clean up
-			loginfo($config, " * Cleaning up temporary files and folders\n");
+			$this->loginfo($config, " * Cleaning up temporary files and folders\n");
 			//deltree($zipLocation . $folder, true);
 			unlink($zipLocation . $zipFile);
 			
@@ -471,7 +469,7 @@ Class Deploy {
 			$sep = (substr($dir, -1) == DIRECTORY_SEPARATOR ? '' : DIRECTORY_SEPARATOR);
 			$dsp = (substr($dst, -1) == DIRECTORY_SEPARATOR ? '' : DIRECTORY_SEPARATOR);
 			foreach ($files as $file) {
-				(is_dir("$dir$sep$file")) ? cptree("$dir$sep$file", "$dst$dsp$file") : copy("$dir$sep$file", "$dst$dsp$file");
+				(is_dir("$dir$sep$file")) ? $this->cptree("$dir$sep$file", "$dst$dsp$file") : copy("$dir$sep$file", "$dst$dsp$file");
 			}
 			return true;
 		}

@@ -81,11 +81,11 @@ class Config {
 	 	 *
 		 * Keys can be identical, or you can set unique values for each key.
 		 *
-	 	 * 'deployAuthKey' is typically used in the deploy URL
-	 	 * Example: http://example.com/github-sync/deploy.php?key=value
+	 	 * 'deployAuthKey' is typically used when deploying the entire repo (i.e. when using the setup parameter in the URL)
+	 	 * Example: http://example.com/github-sync/index.php?setup=repo-to-deploy&key=deploy-key-value
 	 	 *
-	 	 * 'gatewayAuthKey' is typically used by the Post Service Hook.
-	 	 * Example: http://example.com/github-sync/gateway.php?key=value
+	 	 * 'gatewayAuthKey' is typically used when deploying commits only (i.e. via GitHub)
+	 	 * Example: http://example.com/github-sync/index.php?key=gateway-key-value
 		 *
 		 */
 			REQUIRE_AUTHENTICATION 	= false,

@@ -38,8 +38,8 @@
         @header('Location: admin.php');
     }
 
-    if (isset($_POST['delete_log']) && isset($_SESSION['logged'])) {
-        clear_file($_POST['delete_log']);
+    if (isset($_GET['delete_log']) && isset($_SESSION['logged'])) {
+        clear_file($_GET['delete_log']);
         @header('Location: admin.php');
     }
 ?>
@@ -102,8 +102,10 @@
 
 <?php
 function clear_file($file){
+
+    error_log("file " . $file);
     
-    if ($file === 'php-error-log'){
+    if ($file == 'php-error-log'){
         $file = 'php-error.log';
     } else {
         die();
