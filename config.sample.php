@@ -24,9 +24,9 @@
 
 class Config {
 
-	function __construct() {
-		error_log('config.php');
-	}
+	//function __construct() {
+	//	error/_log('config.php');
+	//}
 
 	const 	
 		/**
@@ -90,7 +90,9 @@ class Config {
 		 */
 			REQUIRE_AUTHENTICATION 	= false,
 		    DEPLOY_AUTH_KEY 		= '',
-		    GATEWAY_AUTH_KEY		= '';
+		    GATEWAY_AUTH_KEY		= '',
+
+		    ADMIN_PASSWORD			= '';       
 
 
 

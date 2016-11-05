@@ -1,5 +1,4 @@
 <?php
-
 /*
 	GitHub Sync (c) Mikey Beck
 	https://github.com/mikeybeck/github-sync
@@ -11,7 +10,6 @@
 	Version: 0.2.0
 	Description: Service hook handler class for GitHub projects
 
-
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
 	as published by the Free Software Foundation; either version 2
@@ -22,7 +20,6 @@
 	GNU General Public License for more details.
 */
 
-
 /*
 	This script accepts commit information from GitHub. Commit information 
 	is automatically posted by GitHub after each push to a repository, 
@@ -30,10 +27,6 @@
 	see https://confluence.atlassian.com/display/BITBUCKET/POST+hook+management
  */
 
-
-//require_once( 'config.php' );
-
-//$config = new Config();
 
 Class Gateway {
 
