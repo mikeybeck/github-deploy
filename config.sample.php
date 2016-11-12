@@ -8,7 +8,7 @@
 	https://bitbucket.org/alixandru/bitbucket-sync
 
 	File: config.php
-	Version: 0.2.0
+	Version: 0.3.0
 	Description: Configuration class for GitHub Sync script
 
 

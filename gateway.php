@@ -7,7 +7,7 @@
 	https://bitbucket.org/alixandru/bitbucket-sync
 
 	File: gateway.php
-	Version: 0.2.0
+	Version: 0.3.0
 	Description: Service hook handler class for GitHub projects
 
 	This program is free software; you can redistribute it and/or

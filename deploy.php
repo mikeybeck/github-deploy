@@ -8,7 +8,7 @@
 	https://bitbucket.org/alixandru/bitbucket-sync
 	
 	File: deploy.php
-	Version: 0.2.0
+	Version: 0.3.0
 	Description: Deploy class for GitHub projects
 	
 	This program is free software; you can redistribute it and/or
@@ -165,7 +165,7 @@ Class Deploy {
 			
 			// clean up
 			$this->loginfo($config, " * Cleaning up temporary files and folders\n");
-			//deltree($zipLocation . $folder, true);
+			deltree($zipLocation . $folder, true);
 			unlink($zipLocation . $zipFile);
 			
 			echo "\nFinished deploying $repository.\n</pre>";

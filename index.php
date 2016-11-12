@@ -8,7 +8,7 @@
 	https://bitbucket.org/alixandru/bitbucket-sync
 
 	File: index.php
-	Version: 0.2.0
+	Version: 0.3.0
 	Description: User interface for GitHub Sync script
 
 

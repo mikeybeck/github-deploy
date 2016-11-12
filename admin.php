@@ -11,7 +11,7 @@
     FTPBucket: https://github.com/Wanchai/FTPbucket
 
     File: admin.php
-    Version: 0.2.0
+    Version: 0.3.0
     Description: Admin page for GitHub Sync script
 
 
