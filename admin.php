@@ -1,8 +1,8 @@
 <?php
 
 /*
-    GitHub Sync (c) Mikey Beck
-    https://github.com/mikeybeck/github-sync
+    Github Deploy (c) Mikey Beck
+    https://github.com/mikeybeck/github-deploy
 
     Based on BitBucket Sync (c) Alex Lixandru
     https://bitbucket.org/alixandru/bitbucket-sync
@@ -12,7 +12,7 @@
 
     File: admin.php
     Version: 0.3.0
-    Description: Admin page for GitHub Sync script
+    Description: Admin page for Github Deploy script
 
 
     This program is free software; you can redistribute it and/or
@@ -48,7 +48,7 @@
 <head>
 	<meta http-equiv="content-type" content="text/html" />
 
-	<title>GitHub Sync</title>
+	<title>Github Deploy</title>
 	<style>
 	    .log{
 	        font: 12px verdana,sans-serif;

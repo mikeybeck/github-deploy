@@ -1,8 +1,8 @@
 
 <?php
 /*
-	GitHub Sync (c) Mikey Beck
-	https://github.com/mikeybeck/github-sync
+	Github Deploy (c) Mikey Beck
+	https://github.com/mikeybeck/github-deploy
 
 	Based on BitBucket Sync (c) Alex Lixandru
 	https://bitbucket.org/alixandru/bitbucket-sync
@@ -89,7 +89,7 @@ Class Deploy {
 				return false;
 			}
 			
-			echo "<pre>\nGithub Sync - Full Deploy\n============================\n";
+			echo "<pre>\nGithub Deploy - Full Deploy\n============================\n";
 			
 			// determine the destination of the deployment
 			if( array_key_exists($repository, $deploy) ) {
@@ -188,7 +188,7 @@ Class Deploy {
 				return false;
 			}
 
-			echo "<pre>\nGitHub Sync\n==============\n";
+			echo "<pre>\nGithub Deploy\n==============\n";
 			
 			$prefix = $config::COMMITS_FILENAME_PREFIX;
 			if($retry) {

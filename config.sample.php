@@ -1,15 +1,15 @@
 <?php
 
 /*
-	GitHub Sync (c) Mikey Beck
-	https://github.com/mikeybeck/github-sync
+	Github Deploy (c) Mikey Beck
+	https://github.com/mikeybeck/github-deploy
 
 	Based on BitBucket Sync (c) Alex Lixandru
 	https://bitbucket.org/alixandru/bitbucket-sync
 
 	File: config.php
 	Version: 0.3.0
-	Description: Configuration class for GitHub Sync script
+	Description: Configuration class for Github Deploy script
 
 
 	This program is free software; you can redistribute it and/or
@@ -76,16 +76,16 @@ class Config {
 		 * If requireAuthentication is set to 'true' a secret value
 		 * needs to be provided via an additional "key" URL parameter in script requests.
 		 *
-		 * While not required, github-sync is potentially left open to control
+		 * While not required, github-deploy is potentially left open to control
 		 * by strangers should an authentication key not be set.
 	 	 *
 		 * Keys can be identical, or you can set unique values for each key.
 		 *
 	 	 * 'deployAuthKey' is typically used when deploying the entire repo (i.e. when using the setup parameter in the URL)
-	 	 * Example: http://example.com/github-sync/index.php?setup=repo-to-deploy&key=deploy-key-value
+	 	 * Example: http://example.com/github-deploy/index.php?setup=repo-to-deploy&key=deploy-key-value
 	 	 *
 	 	 * 'gatewayAuthKey' is typically used when deploying commits only (i.e. via GitHub)
-	 	 * Example: http://example.com/github-sync/index.php?key=gateway-key-value
+	 	 * Example: http://example.com/github-deploy/index.php?key=gateway-key-value
 		 *
 		 */
 			REQUIRE_AUTHENTICATION 	= false,
@@ -101,9 +101,9 @@ class Config {
 	 * REQUIRED:
 	 *
 	 * The location where the project files will be deployed when modified in the
-	 * BitBucket project, identified by the name of the BitBucket project.
+	 * Github project, identified by the name of the Github project.
 	 * The following pattern is used: [project-name] => [path on the web-server].
-	 * This allows multiple BitBucket projects to be deployed to different
+	 * This allows multiple Github projects to be deployed to different
 	 * locations on the web-server's file system.
 	 *
 	 * Multiple projects example:
@@ -112,7 +112,7 @@ class Config {
 	 *		'my-project-name' => '/home/www/site/',
 	 *		'my-data' => '/home/www/data/',
 	 *		'another-project' => '/home/username/public_html/',
-	 *		'user.bitbucket.org' => '/home/www/bbpages/',
+	 *		'user.github.org' => '/home/www/bbpages/',
 	 * 	);
 	 *
 	 * Make sure all these paths are writable! It is also recommended to use

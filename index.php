@@ -1,15 +1,15 @@
 <?php
 
 /*
-	GitHub Sync (c) Mikey Beck
-	https://github.com/mikeybeck/github-sync
+	Github Deploy (c) Mikey Beck
+	https://github.com/mikeybeck/github-deploy
 
 	Based on BitBucket Sync (c) Alex Lixandru
 	https://bitbucket.org/alixandru/bitbucket-sync
 
 	File: index.php
 	Version: 0.3.0
-	Description: User interface for GitHub Sync script
+	Description: User interface for Github Deploy script
 
 
 	This program is free software; you can redistribute it and/or

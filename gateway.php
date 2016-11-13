@@ -1,7 +1,7 @@
 <?php
 /*
-	GitHub Sync (c) Mikey Beck
-	https://github.com/mikeybeck/github-sync
+	Github Deploy (c) Mikey Beck
+	https://github.com/mikeybeck/github-deploy
 
 	Based on BitBucket Sync (c) Alex Lixandru
 	https://bitbucket.org/alixandru/bitbucket-sync

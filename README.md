@@ -1,4 +1,4 @@
-# GitHub Sync #
+# Github Deploy #
 
 
 This is a lightweight utility script that synchronizes the local file system with updates from a GitHub project.
@@ -16,7 +16,7 @@ It is intended to be used on a web-server which is reachable from the internet a
 
 For example, supposing you have a website which is deployed on a shared-hosting server, and the source code is stored in a private repository in GitHub. This script allows you to automatically update the deployed website each time you push changes to the GitHub project. This way, you don't have to manually copy any file from your working directory to the hosting server.
 
-GitHub Sync will synchronize only the files which have been modified, thus reducing the network traffic and deploy times.
+Github Deploy will synchronize only the files which have been modified, thus reducing the network traffic and deploy times.
 
 ## Installation ##
 
@@ -29,10 +29,10 @@ This script requires PHP 5.3+ with **cURL** and **Zip** extensions enabled. It c
   1. Get the source code for this script from [GitHub][GitHub], either using Git, or by downloading directly.
   2. Copy the source files to your web-server in a location which is accessible from the internet (usually `public_html`, or `www` folders).
   3. Rename `config.sample.php` file to `config.php` and adjust it with information related to your environment and GitHub projects that you want to keep in sync (see **Configuration** section).
-  4. Make sure all folders involved in the sync process are **write-accessible** (see `config.php` for details). The most important of all is your `commits` folder. You can test if this folder is writable by accessing the `index.php` script with `test` parameter in your browser (i.e. `http://mysite.ext/github-sync/index.php?test`)
+  4. Make sure all folders involved in the sync process are **write-accessible** (see `config.php` for details). The most important of all is your `commits` folder. You can test if this folder is writable by accessing the `index.php` script with `test` parameter in your browser (i.e. `http://mysite.ext/github-deploy/index.php?test`)
   5. Perform an initial import of each project, through which the project files are copied to the web-server file-system (see **Operation** section below).
   6. Configure the GitHub projects to send commit information to your web server through the webhook. The hook must point to the `index.php` script (do this for each repository that needs to be synchronized!). [See more information][Hook] on how to create a webhook in GitHub. 
-  POST URL should be, for example, `http://mysite.ext/github-sync/index.php`.
+  POST URL should be, for example, `http://mysite.ext/github-deploy/index.php`.
   The `content type` should be `application/x-www-form-urlencoded`.
   7. Start pushing commits to your GitHub projects and see if the changes are reflected on your web server.
 
@@ -51,9 +51,9 @@ This operation mode does not necessarily need a webhook to be defined in GitHub 
 
 1. If your repository is called *my-project-name*, you need to define it in the `config.php` file and to specify, at least, the repo owner's username and a valid location, accessible for writing by the web server process. Optionally you can state the branch from which the deployment will be performed.  The default deployment branch is 'deploy'.
 
-2. After this step, simply access the script `deploy.php` with the parameter `setup=my-project-name` (i.e. `http://mysite.ext/github-sync/deploy.php?setup=my-project-name`). It is advisable to have *verbose mode* enabled in the configuration file, to see exactly what is happening.
+2. After this step, simply access the script `deploy.php` with the parameter `setup=my-project-name` (i.e. `http://mysite.ext/github-deploy/deploy.php?setup=my-project-name`). It is advisable to have *verbose mode* enabled in the configuration file, to see exactly what is happening.
 
-   Full synchronization mode also supports cleaning up the destination folder before attempting to import the zip archive. This can be done by specifying the `clean` URL parameter (i.e. `http://mysite.ext/GitHub-sync/deploy.php?setup=my-project-name&key=x&clean=1`). When this parameter is present, the contents of the project location folder (specified in the configuration file) will be deleted before performing the actual import. In order to enhance security, when cleaning is requested (through the `clean` parameter) , the `key` parameter must also be specified, with the correct value of _deploy_ authorization code (defined in `config.php`).
+   Full synchronization mode also supports cleaning up the destination folder before attempting to import the zip archive. This can be done by specifying the `clean` URL parameter (i.e. `http://mysite.ext/github-deploy/deploy.php?setup=my-project-name&key=x&clean=1`). When this parameter is present, the contents of the project location folder (specified in the configuration file) will be deleted before performing the actual import. In order to enhance security, when cleaning is requested (through the `clean` parameter) , the `key` parameter must also be specified, with the correct value of _deploy_ authorization code (defined in `config.php`).
 
    Once the import is complete, you can go on and setup the webhook in GitHub and start pushing changes to your project.
 
@@ -81,7 +81,7 @@ Note: since files are updated one by one, there is a risk of having the website 
 Important: if there are a lot of files added/changed/deleted in a commit and deployment is found to be incomplete afterwards, it is recommended to trigger a full synchronization to fix this.
 
 
-  [GitHub]: https://github.com/mikeybeck/github-sync
+  [GitHub]: https://github.com/mikeybeck/github-deploy
   [Hook]: https://developer.github.com/webhooks/creating/
 
 
