@@ -6,11 +6,11 @@
 
 	Based on BitBucket Sync (c) Alex Lixandru
 	https://bitbucket.org/alixandru/bitbucket-sync
-	
+
 	File: deploy.php
 	Version: 0.3.0
 	Description: Deploy class for GitHub projects
-	
+
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
 	as published by the Free Software Foundation; either version 2
@@ -35,7 +35,7 @@ Class Deploy {
             header('X-PHP-Response-Code: '.$newcode, true, $newcode);
             if(!headers_sent())
                 $code = $newcode;
-        }       
+        }
         return $code;
     }
 
@@ -53,11 +53,11 @@ Class Deploy {
 			# full synchronization
 			$repo = strip_tags(stripslashes(urldecode($setupRepo)));
 			$this->syncFull($config, $key, $repo);
-			
+
 		} else if(isset($_GET['retry'])) {
 			# retry failed synchronizations
 			$this->syncChanges($config, $key, true);
-			
+
 		} else {
 			# commit synchronization
 			$this->syncChanges($config, $key);
@@ -88,9 +88,9 @@ Class Deploy {
 				echo " # Unauthorized." . ($shouldClean && empty($key) ? " The deploy auth key must be provided when cleaning." : "");
 				return false;
 			}
-			
+
 			echo "<pre>\nGithub Deploy - Full Deploy\n============================\n";
-			
+
 			// determine the destination of the deployment
 			if( array_key_exists($repository, $deploy) ) {
 				$deployLocation = $deploy[ $repository ] . (substr($deploy[ $repository ], -1) == DIRECTORY_SEPARATOR ? '' : DIRECTORY_SEPARATOR);
@@ -98,7 +98,7 @@ Class Deploy {
 				echo " # Unknown repository: $repository!";
 				return false;
 			}
-			
+
 			// determine from which branch to get the data
 			if( isset($deploy_branch_arr) && array_key_exists($o->repository->name, $deploy_branch_arr) ) {
 				$deploy_branch = $deploy_branch_arr[ $o->repository->name ];
@@ -115,22 +115,22 @@ Class Deploy {
 
 			echo "repoUrl: " . $repoUrl . "\n";
 			echo "branchUrl: " . $branchUrl . "\n";
-			
+
 			// store the zip file temporary
 			$zipFile = 'full-' . time() . '-' . rand(0, 100);
 			$zipLocation = $config::COMMITS_FOLDER . (substr($config::COMMITS_FOLDER, -1) == DIRECTORY_SEPARATOR ? '' : DIRECTORY_SEPARATOR);
 
 			// get the archive
-			$this->loginfo($config, " * Fetching archive from $baseUrl$repoUrl$branchUrl\n");
+			$this->loginfo($config::VERBOSE, " * Fetching archive from $baseUrl$repoUrl$branchUrl\n");
 			$result = $this->getFileContents($config, $baseUrl . $repoUrl . $branchUrl, $zipLocation . $zipFile);
 
 			// extract contents
-			$this->loginfo($config, " * Extracting archive to $zipLocation\n");
+			$this->loginfo($config::VERBOSE, " * Extracting archive to $zipLocation\n");
 			$zip = new ZipArchive;
 
 			if( $zip->open($zipLocation . $zipFile) === true ) {
 				$zip->extractTo($zipLocation);
-				$stat = $zip->statIndex(0); 
+				$stat = $zip->statIndex(0);
 				$folder = $stat['name'];
 				$zip->close();
 			} else {
@@ -138,36 +138,36 @@ Class Deploy {
 				unlink($zipLocation . $zipFile);
 				return false;
 			}
-			
+
 			// validate extracted content
 			if( empty($folder) || !is_dir( $zipLocation . $folder ) ) {
 				echo " # Unable to find the extracted files in $zipLocation\n";
 				unlink($zipLocation . $zipFile);
 				return false;
 			}
-			
+
 			// delete the old files, if instructed to do so
 			if( $shouldClean ) {
-				$this->loginfo($config, " * Deleting old content from $deployLocation\n");
+				$this->loginfo($config::VERBOSE, " * Deleting old content from $deployLocation\n");
 				if( deltree($deployLocation) === false ) {
 					echo " # Unable to completely remove the old files from $deployLocation. Process will continue anyway!\n";
 				}
 			}
-			
+
 			// copy the contents over
-			$this->loginfo($config, " * Copying new content to $deployLocation\n");
+			$this->loginfo($config::VERBOSE, " * Copying new content to $deployLocation\n");
 			if( $this->cptree($zipLocation . $folder, $deployLocation) == false ) {
 				echo " # Unable to deploy the extracted files to $deployLocation. Deployment is incomplete!\n";
 				$this->deltree($zipLocation . $folder, true);
 				unlink($zipLocation . $zipFile);
 				return false;
 			}
-			
+
 			// clean up
-			$this->loginfo($config, " * Cleaning up temporary files and folders\n");
+			$this->loginfo($config::VERBOSE, " * Cleaning up temporary files and folders\n");
 			deltree($zipLocation . $folder, true);
 			unlink($zipLocation . $zipFile);
-			
+
 			echo "\nFinished deploying $repository.\n</pre>";
 		}
 
@@ -180,7 +180,7 @@ Class Deploy {
 			//global $CONFIG;
 			global $processed;
 			global $rmdirs;
-			
+
 			// check authentication key if authentication is required
 			if ( $config::REQUIRE_AUTHENTICATION && $config::DEPLOY_AUTH_KEY != $key) {
 				http_response_code(401);
@@ -189,12 +189,12 @@ Class Deploy {
 			}
 
 			echo "<pre>\nGithub Deploy\n==============\n";
-			
+
 			$prefix = $config::COMMITS_FILENAME_PREFIX;
 			if($retry) {
 				$prefix = "failed-$prefix";
 			}
-			
+
 			$processed = array();
 			$rmdirs = array();
 			$location = $config::COMMITS_FOLDER . (substr($config::COMMITS_FOLDER, -1) == DIRECTORY_SEPARATOR ? '' : DIRECTORY_SEPARATOR);
@@ -202,7 +202,7 @@ Class Deploy {
 
 			if($commits)
 			foreach($commits as $file) {
-				if( $file != '.' && $file != '..' && is_file($location . $file) 
+				if( $file != '.' && $file != '..' && is_file($location . $file)
 					&& stripos($file, $prefix) === 0 ) {
 					// get file contents and parse it
 					$json = @file_get_contents($location . $file);
@@ -213,7 +213,7 @@ Class Deploy {
 						$del = false;
 					}
 					flush();
-					
+
 					if($del) {
 						// delete file afterwards
 						unlink( $location . $file );
@@ -223,7 +223,7 @@ Class Deploy {
 					}
 				}
 			}
-			
+
 			// remove old (renamed) directories which are empty
 			foreach($rmdirs as $dir => $name) {
 				if(@rmdir($dir)) {
@@ -245,14 +245,14 @@ Class Deploy {
 			$deploy = $config->DEPLOY;
 			$deploy_branch = '';
 			$deploy_branch_arr = $config->DEPLOY_BRANCH;
-			
+
 			$o = json_decode($postData);
 			if( !$o ) {
 				// could not parse ?
 				echo "    ! Invalid JSON file\n";
 				return false;
 			}
-			
+
 			// determine the destination of the deployment
 			if( array_key_exists($o->repository->name, $deploy) ) {
 				$deployLocation = $deploy[ $o->repository->name ] . (substr($deploy[ $o->repository->name ], -1) == DIRECTORY_SEPARATOR ? '' : DIRECTORY_SEPARATOR);
@@ -262,7 +262,7 @@ Class Deploy {
 				echo "    ! Repository not configured for sync: {$o->repository->name}\n";
 				return false;
 			}
-			
+
 			// determine from which branch to get the data
 			if( isset($deploy_branch_arr) && array_key_exists($o->repository->name, $deploy_branch_arr) ) {
 				$deploy_branch = $deploy_branch_arr[ $o->repository->name ];
@@ -284,7 +284,7 @@ Class Deploy {
 				}
 			}
 
-			
+
 			//URL looks something like: https://raw.githubusercontent.com/mikeybeck/test-deploy/master/ - this one doesn't seem to have the api limits
 			// OR https://api.github.com/repos/mikeybeck/repo-name/contents/wp-links-opml3.php?ref=branch-name - this one is limited to files >1mb
 
@@ -306,19 +306,19 @@ Class Deploy {
 			$pending_add = array();
 			$pending_rem = array();
 			$pending_mod = array();
-			
+
 			// loop through commits
 			foreach($o->commits as $commit) {
 				// Github post info doesn't include branch name so we assume it's correct...
 				// And this means we can't do the whole 'pending' thing. (maybe.  Dunno.  sorry.)
-				$this->loginfo($config, "    > Change-set: " . trim($commit->message) . "\n");
+				$this->loginfo($config::VERBOSE, "    > Change-set: " . trim($commit->message) . "\n");
 						$files_added = array_merge($pending_add, $commit->added);
 						$files_removed = array_merge($pending_rem, $commit->removed);
 						$files_modified = array_merge($pending_mod, $commit->modified);
 
 						$files_added_and_modified = array_merge($files_added, $files_modified);
 
-						
+
 						foreach ($files_added_and_modified as $file) {
 							//add_mod_file($file_modded);
 							if( empty($processed[$file]) ) {
@@ -329,36 +329,36 @@ Class Deploy {
 									// try one more time
 									$contents = $this->getFileContents($config, $baseUrl . $apiUrl . $repoUrl . $rawUrl . $branchUrl . $file);
 								}
-								
+
 								if( $contents != 'Not Found' && $contents !== false ) {
 									if( !is_dir( dirname($deployLocation . $file) ) ) {
 										// attempt to create the directory structure first
 										mkdir( dirname($deployLocation . $file), 0755, true );
 									}
 									file_put_contents( $deployLocation . $file, $contents );
-									$this->loginfo($config, "      - Synchronized $file\n");
-									
+									$this->loginfo($config::VERBOSE, "      - Synchronized $file\n");
+
 								} else {
 									echo "      ! Could not get file contents for $file\n";
 									flush();
 								}
 							}
 						}
-						
+
 						foreach ($files_removed as $file) {
 							//remove_file($file_removed);
 							unlink( $deployLocation . $file );
 							$processed[$file] = 0; // to allow for subsequent re-creating of this file
 							$rmdirs[dirname($deployLocation . $file)] = dirname($file);
-							$this->loginfo($config, "      - Removed $file\n");
+							$this->loginfo($config::VERBOSE, "      - Removed $file\n");
 						}
 
-						
+
 					// clean pending files, if any
 					$pending_add = array();
 					$pending_rem = array();
 					$pending_mod = array();
-				
+
 				//} else {
 					// unknown branch for now, keep these files
 					//$pending = array_merge($pending, $commit->files);
@@ -367,7 +367,7 @@ Class Deploy {
 				//	$files_modified = array_merge($pending_mod, $commit->modified);
 				//}
 			}
-			
+
 			return true;
 		}
 
@@ -376,16 +376,16 @@ Class Deploy {
 		 * Gets a remote file contents using CURL
 		 */
 		function getFileContents($config, $url, $writeToFile = false) {
-			
+
 			// create a new cURL resource
 			$ch = curl_init();
 
 			//$url = $url . "?ref=deploy";
 			$url = str_replace(' ', '%20', $url); // This single line of code was the solution after *many* hours of debugging.  Please treat with due reverence.
-			
+
 			// set URL and other appropriate options
 			curl_setopt($ch, CURLOPT_URL, $url);
-			
+
 			curl_setopt($ch, CURLOPT_HEADER, 0);
 			//curl_setopt($ch, CURLOPT_VERBOSE, 1);
 
@@ -409,7 +409,7 @@ Class Deploy {
 
 			// Set default user agent here in case no api user is set
 			curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/4.0 (compatible; MSIE 5.01; Windows NT 5.0)");
-			
+
 			curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC );
 			$API_USER = $config::API_USER;
 			if(!empty($API_USER)) {
@@ -419,11 +419,11 @@ Class Deploy {
 
 
 			// Remove to leave curl choose the best version
-			//curl_setopt($ch, CURLOPT_SSLVERSION,3); 
+			//curl_setopt($ch, CURLOPT_SSLVERSION,3);
 			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
 			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-			curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1); 
-			
+			curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+
 			// grab URL
 			$data = curl_exec($ch);
 			$data2 = (string) $data;
@@ -441,21 +441,21 @@ Class Deploy {
 		      */
 		     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 		     $curl_info = curl_getinfo($ch);
-		     if ($http_code != 200) {		                      		                          
+		     if ($http_code != 200) {
 		     	error_log('Cant\'t get file from URL '.$url.' - cURL error: '.curl_error($ch) . 'Http code: '. $http_code);
 		     	error_log('More info: ' . print_r($curl_info, true));
-		     }	
-			
+		     }
+
 			if(curl_errno($ch) != 0) {
 				echo "      ! File transfer error: " . curl_error($ch) . "\n";
 			}
-			
+
 
 			// close cURL resource, and free up system resources
 			curl_close($ch);
-			
+
 			return $data2;
-			
+
 		}
 
 
@@ -487,7 +487,7 @@ Class Deploy {
 			$cdir = $cdir . (substr($cdir, -1) == DIRECTORY_SEPARATOR ? '' : DIRECTORY_SEPARATOR);
 			$adir = $adir . (substr($adir, -1) == DIRECTORY_SEPARATOR ? '' : DIRECTORY_SEPARATOR);
 			if( $cdir == $adir ) {
-				$this->loginfo($config, " * Contents of '" . basename($adir) . "' folder will not be cleaned up.\n");
+				$this->loginfo($config::VERBOSE, " * Contents of '" . basename($adir) . "' folder will not be cleaned up.\n");
 				return true;
 			}
 			// process contents of this dir
@@ -508,10 +508,11 @@ Class Deploy {
 		/**
 		 * Outputs some information to the screen if verbose mode is enabled
 		 */
-		function loginfo($config, $message) {
+		function loginfo($verbose, $message) {
 			//global $CONFIG;
 
-			if( $config::VERBOSE ) {
+			if( $verbose ) {
+                error_log($message);
 				echo $message;
 				flush();
 			}
