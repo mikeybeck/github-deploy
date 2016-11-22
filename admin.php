@@ -65,7 +65,67 @@
 	    td {
 	        padding: 5px;
 	    }
+        .log .commit-info:nth-of-type(2n) {
+            background: #eee;
+        }
 	</style>
+
+    <script type="text/javascript">
+
+        // Wait for the page to load first
+        window.onload = function() {
+
+          //Get a reference to the link on the page
+          // with an id of "mylink"
+          var reverseButton = document.getElementById("reverse");
+
+          //Set code to run when the link is clicked
+          // by assigning a function to "onclick"
+          reverseButton.onclick = function() {
+
+            if (typeof(Storage) !== "undefined") {
+                // Code for localStorage/sessionStorage.
+                if (localStorage.getItem("reverse") == 1) {
+                    localStorage.setItem("reverse", 0);               
+                } else {
+                    localStorage.setItem("reverse", 1);
+                }
+                location.reload();
+            } else {
+                // Sorry! No Web Storage support..
+                alert('No localstorage detected. Reverse function disabled.');
+            }
+            
+            return false;
+          }
+
+            var text = document.getElementById('log').innerHTML;
+
+            var mySplitResult = text.split(/(^.*?Change-set:.*$)/mg);
+
+            var commits = [];
+
+            for(var i = 0; i < mySplitResult.length; i++) {
+                //console.log("<br /> Element " + i + " = " + mySplitResult[i]);
+                if (mySplitResult[i].indexOf("Change-set:") !== -1 ) {
+                    commits.push("<div class='commit-info'><b>" + mySplitResult[i] + "</b>" + mySplitResult[i+1] + "</div>");
+                    i++;
+                } 
+                
+            }
+                
+            //textRev = text.split('\n').reverse().join('\n');
+
+            if (localStorage.getItem("reverse") == 1) {
+                //document.getElementById('log').innerHTML = textRev;
+                document.getElementById('log').innerHTML = commits.reverse().join("").toString();
+            } else {
+                document.getElementById('log').innerHTML = commits.join("").toString();
+            }
+            
+        }
+    </script>
+
 </head>
 
 <body>
@@ -89,8 +149,8 @@
         ?>
         
         <div>
-                Logs - <a href='?delete_log=php-error-log'>Clear Log</a><br />
-                <pre class='log'><?php echo $exp1; ?></pre>
+                Logs - <a href='?delete_log=php-error-log'>Clear Log</a> <button id="reverse">Reverse</button><br />
+                <pre class='log' id="log"><?php echo $exp1; ?></pre>
         </div>
         
         <?php
@@ -117,3 +177,4 @@ function clear_file($file){
         fclose($file);
     }
 }
+
