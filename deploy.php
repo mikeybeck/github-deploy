@@ -149,7 +149,7 @@ Class Deploy {
 			// delete the old files, if instructed to do so
 			if( $shouldClean ) {
 				$this->loginfo($config::VERBOSE, " * Deleting old content from $deployLocation\n");
-				if( deltree($deployLocation) === false ) {
+				if( $this->deltree($deployLocation) === false ) {
 					echo " # Unable to completely remove the old files from $deployLocation. Process will continue anyway!\n";
 				}
 			}
@@ -165,7 +165,7 @@ Class Deploy {
 
 			// clean up
 			$this->loginfo($config::VERBOSE, " * Cleaning up temporary files and folders\n");
-			deltree($zipLocation . $folder, true);
+			$this->deltree($zipLocation . $folder, true);
 			unlink($zipLocation . $zipFile);
 
 			echo "\nFinished deploying $repository.\n</pre>";
@@ -280,6 +280,10 @@ Class Deploy {
 				if (substr($o->ref, $neglength - 1) === "/" . $deploy_branch) {
 				} else {
 					error_log('exiting! Incorrect branch');
+					error_log('$ o->ref: ' . $o->ref);
+					error_log('$ deploy_branch: ' . $deploy_branch);
+					error_log(print_r($o, true));
+
 					exit;
 				}
 			}
@@ -494,7 +498,7 @@ Class Deploy {
 			$files = array_diff(scandir($dir), array('.','..'));
 			$sep = (substr($dir, -1) == DIRECTORY_SEPARATOR ? '' : DIRECTORY_SEPARATOR);
 			foreach ($files as $file) {
-				(is_dir("$dir$sep$file")) ? deltree("$dir$sep$file", true) : unlink("$dir$sep$file");
+				(is_dir("$dir$sep$file")) ? $this->deltree("$dir$sep$file", true) : unlink("$dir$sep$file");
 			}
 
 			if($deleteParent) {

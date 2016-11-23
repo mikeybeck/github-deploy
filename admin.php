@@ -120,9 +120,8 @@
                 //document.getElementById('log').innerHTML = textRev;
                 document.getElementById('log').innerHTML = commits.reverse().join("").toString();
             } else {
-                document.getElementById('log').innerHTML = commits.join("").toString();
+                //document.getElementById('log').innerHTML = commits.join("").toString();
             }
-            
         }
     </script>
 
@@ -149,7 +148,21 @@
         ?>
         
         <div>
-                Logs - <a href='?delete_log=php-error-log'>Clear Log</a> <button id="reverse">Reverse</button><br />
+                Logs - <a href='?delete_log=php-error-log'>Clear Log</a> <button id="reverse">Reverse</button>
+                <?php $urlBase = '//'.$_SERVER['HTTP_HOST'].dirname($_SERVER['PHP_SELF']); ?>
+                <a href=<?php echo $urlBase . "/index.php?test&key=" . $config::DEPLOY_AUTH_KEY; ?>>Test</a>
+                <p>Set up repo:<br>
+                <?php 
+                    //Get repo names and provide a link to deploy each one
+                    foreach(array_keys($config->DEPLOY) as $repo) {
+                        ?>
+                        <a href=<?php echo $urlBase . "/index.php?setup=". $repo ."&key=" . $config::DEPLOY_AUTH_KEY; ?>>
+                        <?php echo $repo; ?></a><br />
+                        <?php
+                    } 
+                ?>
+                </p>
+                
                 <pre class='log' id="log"><?php echo $exp1; ?></pre>
         </div>
         
