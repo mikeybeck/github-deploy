@@ -60,7 +60,7 @@
 	files. This script tries to optimize the synchronization by not processing 
 	files more than once.
 	
-	When a deployment fails the original commit file is preserved. It is 
+	TODO: When a deployment fails the original commit file is preserved. It is 
 	possible to retry processing failed synchronizations by specifying the 
 	"retry" GET parameter in the URL.
 	

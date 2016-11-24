@@ -66,7 +66,11 @@ class Config {
 		/** The ID of an user with read access to project files (NOT required UNLESS repo is private.) */
 			API_USER				= '',
 
-		/** The password of {apiUser} account (Not required unless repo is private) */
+		/** The password of {API_USER} account (Not required unless repo is private) 
+		 *	You can use a Personal Access Token instead of a password if you wish!
+		 *  Get a new PAT from here: https://github.com/settings/tokens and enter 
+		 *  it below in place of your password. (Recommended!)
+		 */
 			API_PASSWORD			= '',
 
 		/** Whether to print operation details. Very useful, especially when setting up projects */

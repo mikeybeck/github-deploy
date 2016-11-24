@@ -279,10 +279,10 @@ Class Deploy {
 			if (isset($o->ref)) {
 				if (substr($o->ref, $neglength - 1) === "/" . $deploy_branch) {
 				} else {
-					error_log('exiting! Incorrect branch');
-					error_log('$ o->ref: ' . $o->ref);
-					error_log('$ deploy_branch: ' . $deploy_branch);
-					error_log(print_r($o, true));
+					$this->loginfo($config::VERBOSE, " 'exiting! Incorrect branch'\n");
+					$this->loginfo($config::VERBOSE, '$ o->ref: ' . $o->ref);
+					$this->loginfo($config::VERBOSE, '$ deploy_branch: ' . $deploy_branch);
+					$this->loginfo($config::VERBOSE, print_r($o, true));
 
 					exit;
 				}
@@ -433,11 +433,11 @@ Class Deploy {
 			$data2 = (string) $data;
 
 			if(curl_exec($ch) === false) {
-				error_log( 'Curl error: ' . curl_error($ch));
+				$this->loginfo($config::VERBOSE, 'Curl error: ' . curl_error($ch));
 			}
 
 			if ($data2 == '404: Not Found') {
-				error_log("Token required! File at url " . $url . " not downloaded");
+				$this->loginfo($config::VERBOSE, "Token required! File at url " . $url . " not downloaded");
 			}
 
 			/**
@@ -446,12 +446,13 @@ Class Deploy {
 		     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 		     $curl_info = curl_getinfo($ch);
 		     if ($http_code != 200) {
-		     	error_log('Cant\'t get file from URL '.$url.' - cURL error: '.curl_error($ch) . 'Http code: '. $http_code);
-		     	error_log('More info: ' . print_r($curl_info, true));
+		     	$this->loginfo($config::VERBOSE, 'Cant\'t get file from URL '.$url.' - cURL error: '.curl_error($ch) . 'Http code: '. $http_code);
+		     	$this->loginfo($config::VERBOSE, 'More info: ' . print_r($curl_info, true));
 		     }
 
 			if(curl_errno($ch) != 0) {
 				echo "      ! File transfer error: " . curl_error($ch) . "\n";
+		     	$this->loginfo($config::VERBOSE, "      ! File transfer error: " . curl_error($ch) . "\n");
 			}
 
 

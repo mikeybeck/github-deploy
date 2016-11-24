@@ -43,7 +43,7 @@ This script has two complementary modes of operation detailed below.
 
 ### 1. Full synchronization ###
 
-The script runs in this mode when it is accessed through the web-server and has the `setup` GET parameter specified in the URL (`deploy.php?setup=my-project-name`).  In this mode, the script will get the full repository from GitHub and deploy it locally. This is achieved through getting a zip archive of the project, extracting it locally and copying its contents over to the project location specified in the configuration file.
+The script runs in this mode when it is accessed through the web-server and has the `setup` GET parameter specified in the URL (`index.php?setup=my-project-name`).  In this mode, the script will get the full repository from GitHub and deploy it locally. This is achieved through getting a zip archive of the project, extracting it locally and copying its contents over to the project location specified in the configuration file.
 This operation mode does not necessarily need a webhook to be defined in GitHub for the project and is generally suited for initial set-up of projects that will be kept in sync with this script.
 
 
@@ -51,9 +51,9 @@ This operation mode does not necessarily need a webhook to be defined in GitHub 
 
 1. If your repository is called *my-project-name*, you need to define it in the `config.php` file and to specify, at least, the repo owner's username and a valid location, accessible for writing by the web server process. Optionally you can state the branch from which the deployment will be performed.  The default deployment branch is 'deploy'.
 
-2. After this step, simply access the script `deploy.php` with the parameter `setup=my-project-name` (i.e. `http://mysite.ext/github-deploy/deploy.php?setup=my-project-name`). It is advisable to have *verbose mode* enabled in the configuration file, to see exactly what is happening.
+2. After this step, simply access the script `index.php` with the parameter `setup=my-project-name` (i.e. `http://mysite.ext/github-deploy/index.php?setup=my-project-name`). It is advisable to have *verbose mode* enabled in the configuration file, to see exactly what is happening.
 
-   Full synchronization mode also supports cleaning up the destination folder before attempting to import the zip archive. This can be done by specifying the `clean` URL parameter (i.e. `http://mysite.ext/github-deploy/deploy.php?setup=my-project-name&key=x&clean=1`). When this parameter is present, the contents of the project location folder (specified in the configuration file) will be deleted before performing the actual import. In order to enhance security, when cleaning is requested (through the `clean` parameter) , the `key` parameter must also be specified, with the correct value of _deploy_ authorization code (defined in `config.php`).
+   Full synchronization mode also supports cleaning up the destination folder before attempting to import the zip archive. This can be done by specifying the `clean` URL parameter (i.e. `http://mysite.ext/github-deploy/index.php?setup=my-project-name&key=x&clean=1`). When this parameter is present, the contents of the project location folder (specified in the configuration file) will be deleted before performing the actual import. In order to enhance security, when cleaning is requested (through the `clean` parameter) , the `key` parameter must also be specified, with the correct value of _deploy_ authorization code (defined in `config.php`).
 
    Once the import is complete, you can go on and setup the webhook in GitHub and start pushing changes to your project.
 
@@ -61,7 +61,7 @@ This operation mode does not necessarily need a webhook to be defined in GitHub 
 
 ### 2. Commit synchronization ###
 
-This is the default mode which is used when the `deploy.php` script is accessed with no parameters in the URL. To work in this mode, the script needs to read the commit information received from GitHub, so a webhook **must be configured** before changes can be automatically synchronized. In this mode, the script updates only the files which have been modified in a commit. If a file is changed by multiple commits it will be deployed only once, with the latest content, thus reducing network traffic. The entire sync process is described below.
+This is the default mode which is used when the `index.php` script is accessed with no parameters in the URL. To work in this mode, the script needs to read the commit information received from GitHub, so a webhook **must be configured** before changes can be automatically synchronized. In this mode, the script updates only the files which have been modified in a commit. If a file is changed by multiple commits it will be deployed only once, with the latest content, thus reducing network traffic. The entire sync process is described below.
 
 
 #### The process flow of commit synchronization ####
@@ -74,7 +74,7 @@ This is the default mode which is used when the `deploy.php` script is accessed 
 
 4. This script performs the actual synchronization by reading the local file with commit meta-data and requesting from GitHub the content of files which have been changed. It will then update the local project files, one by one. After all files are updated, the meta-data file from `commits` folder is deleted to prevent synchronizing the same changes again.
 
-5. TODO: If synchronization fails, the commit files (containing the commit meta-data) are not deleted, but preserved for later processing. They can be processed again by specifying the `retry` GET parameter when invoking `deploy.php` (i.e. `deploy.php?retry`).
+5. TODO: If synchronization fails, the commit files (containing the commit meta-data) are not deleted, but preserved for later processing. They can be processed again by specifying the `retry` GET parameter when invoking `index.php` (i.e. `index.php?retry`).
 
 Note: since files are updated one by one, there is a risk of having the website in an inconsistent state until all files are updated. It is recommended to trigger the actual synchronization (step 4) only when there is a low activity on the website.
 
