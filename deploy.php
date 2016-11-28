@@ -278,6 +278,7 @@ Class Deploy {
 
 			if (isset($o->ref)) {
 				if (substr($o->ref, $neglength - 1) === "/" . $deploy_branch) {
+					//Branch name ok, do nothing
 				} else {
 					$this->loginfo($config::VERBOSE, " 'exiting! Incorrect branch'\n");
 					$this->loginfo($config::VERBOSE, '$ o->ref: ' . $o->ref);
@@ -290,7 +291,7 @@ Class Deploy {
 
 
 			//URL looks something like: https://raw.githubusercontent.com/mikeybeck/test-deploy/master/ - this one doesn't seem to have the api limits
-			// OR https://api.github.com/repos/mikeybeck/repo-name/contents/wp-links-opml3.php?ref=branch-name - this one is limited to files >1mb
+			// OR https://api.github.com/repos/mikeybeck/repo-name/contents/wp-links-opml3.php?ref=branch-name - this one is limited to files <1mb
 
 			// build URL to get the updated files
 			//$baseUrl = "https://api.github.com/repos";
@@ -330,6 +331,7 @@ Class Deploy {
 								$contents = $this->getFileContents($config, $baseUrl . $apiUrl . $repoUrl . $rawUrl . $branchUrl . $file);
 								//error_log('contents ' . $contents);
 								if( $contents == 'Not Found' ) {
+									$this->loginfo($config::VERBOSE, 'File ' . $file . " contents not found.  Trying again...\n");
 									// try one more time
 									$contents = $this->getFileContents($config, $baseUrl . $apiUrl . $repoUrl . $rawUrl . $branchUrl . $file);
 								}
@@ -341,6 +343,11 @@ Class Deploy {
 									}
 									file_put_contents( $deployLocation . $file, $contents );
 									$this->loginfo($config::VERBOSE, "      - Synchronized $file\n");
+
+									if ($config::CHECK_FILES) {
+										$file_to_check = $deployLocation . $file;
+										$this->check_file_exists($file_to_check, false, $config::VERBOSE);
+									}
 
 								} else {
 									echo "      ! Could not get file contents for $file\n";
@@ -355,6 +362,10 @@ Class Deploy {
 							$processed[$file] = 0; // to allow for subsequent re-creating of this file
 							$rmdirs[dirname($deployLocation . $file)] = dirname($file);
 							$this->loginfo($config::VERBOSE, "      - Removed $file\n");
+							if ($config::CHECK_FILES) {
+								$file_to_check = $deployLocation . $file;
+								$this->check_file_exists($file_to_check, true, $config::VERBOSE);
+							}
 						}
 
 
@@ -373,6 +384,26 @@ Class Deploy {
 			}
 
 			return true;
+		}
+
+		function check_file_exists($file_to_check, $deleted, $verbose) {
+			
+			$this->loginfo($verbose, 'Checking file exists: ' . $file_to_check);
+			if (file_exists($file_to_check)) {
+				if ($deleted) {
+					// File should not exist
+					$this->loginfo($verbose, "....It DOES!! ***ERROR*** ***ERROR***");
+				} else {
+				    $this->loginfo($verbose, "....It does");
+				}
+			} else { 
+				if ($deleted) {
+					// File should not exist
+					$this->loginfo($verbose, "....It does not.");
+				} else {
+				    $this->loginfo($verbose, "....It does NOT!! ***ERROR*** ***ERROR***");
+				}
+			}
 		}
 
 

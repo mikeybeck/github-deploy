@@ -67,7 +67,7 @@ class Config {
 			API_USER				= '',
 
 		/** The password of {API_USER} account (Not required unless repo is private) 
-		 *	You can use a Personal Access Token instead of a password if you wish!
+		 *	You can use a Personal Access Token here instead of a password if you wish!
 		 *  Get a new PAT from here: https://github.com/settings/tokens and enter 
 		 *  it below in place of your password. (Recommended!)
 		 */
@@ -75,6 +75,11 @@ class Config {
 
 		/** Whether to print operation details. Very useful, especially when setting up projects */
 			VERBOSE 				= true,
+
+		/** Whether to check that files exist (or don't, as the case may be) after deployment. 
+		 *  Reassurance For the paranoid.  
+		 */
+			CHECK_FILES 			= false,
 
 		/**
 		 * If requireAuthentication is set to 'true' a secret value
