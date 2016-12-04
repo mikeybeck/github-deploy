@@ -74,7 +74,7 @@ This is the default mode which is used when the `index.php` script is accessed w
 
 4. This script performs the actual synchronization by reading the local file with commit meta-data and requesting from GitHub the content of files which have been changed. It will then update the local project files, one by one. After all files are updated, the meta-data file from `commits` folder is deleted to prevent synchronizing the same changes again.
 
-5. TODO: If synchronization fails, the commit files (containing the commit meta-data) are not deleted, but preserved for later processing. They can be processed again by specifying the `retry` GET parameter when invoking `index.php` (i.e. `index.php?retry`).
+5. If synchronization fails, the commit files (containing the commit meta-data) are not deleted, but preserved for later processing. They can be processed again by specifying the `retry` GET parameter when invoking `index.php` (i.e. `index.php?retry`).
 
 Note: since files are updated one by one, there is a risk of having the website in an inconsistent state until all files are updated. It is recommended to trigger the actual synchronization (step 4) only when there is a low activity on the website.
 

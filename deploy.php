@@ -82,10 +82,12 @@ Class Deploy {
 				// when cleaning, the auth key is mandatory, regardless of requireAuthentication flag
 				http_response_code(403);
 				echo " # Cannot clean right now. A non-empty deploy auth key must be defined for cleaning.";
+				$this->loginfo($config::VERBOSE, " Cannot clean right now. A non-empty deploy auth key must be defined for cleaning.");
 				return false;
 			} else if ( ($config::REQUIRE_AUTHENTICATION || $shouldClean) && $config::DEPLOY_AUTH_KEY != $key ) {
 				http_response_code(401);
 				echo " # Unauthorized." . ($shouldClean && empty($key) ? " The deploy auth key must be provided when cleaning." : "");
+				$this->loginfo($config::VERBOSE, " # Unauthorized." . " The deploy auth key must be provided when cleaning." );
 				return false;
 			}
 
@@ -96,6 +98,7 @@ Class Deploy {
 				$deployLocation = $deploy[ $repository ] . (substr($deploy[ $repository ], -1) == DIRECTORY_SEPARATOR ? '' : DIRECTORY_SEPARATOR);
 			} else {
 				echo " # Unknown repository: $repository!";
+				$this->loginfo($config::VERBOSE, " # Unknown repository: $repository!" );
 				return false;
 			}
 
@@ -135,6 +138,7 @@ Class Deploy {
 				$zip->close();
 			} else {
 				echo " # Unable to extract files. Is the repository name correct?";
+				$this->loginfo($config::VERBOSE, " # Unable to extract files. Is the repository name correct?");
 				unlink($zipLocation . $zipFile);
 				return false;
 			}
@@ -142,6 +146,7 @@ Class Deploy {
 			// validate extracted content
 			if( empty($folder) || !is_dir( $zipLocation . $folder ) ) {
 				echo " # Unable to find the extracted files in $zipLocation\n";
+				$this->loginfo($config::VERBOSE, " # Unable to find the extracted files in $zipLocation");
 				unlink($zipLocation . $zipFile);
 				return false;
 			}
@@ -151,6 +156,7 @@ Class Deploy {
 				$this->loginfo($config::VERBOSE, " * Deleting old content from $deployLocation\n");
 				if( $this->deltree($deployLocation) === false ) {
 					echo " # Unable to completely remove the old files from $deployLocation. Process will continue anyway!\n";
+					$this->loginfo($config::VERBOSE, " # Unable to completely remove the old files from $deployLocation. Process will continue anyway!");
 				}
 			}
 
@@ -158,6 +164,7 @@ Class Deploy {
 			$this->loginfo($config::VERBOSE, " * Copying new content to $deployLocation\n");
 			if( $this->cptree($zipLocation . $folder, $deployLocation) == false ) {
 				echo " # Unable to deploy the extracted files to $deployLocation. Deployment is incomplete!\n";
+				$this->loginfo($config::VERBOSE, " # Unable to deploy the extracted files to $deployLocation. Deployment is incomplete!");
 				$this->deltree($zipLocation . $folder, true);
 				unlink($zipLocation . $zipFile);
 				return false;
@@ -169,6 +176,7 @@ Class Deploy {
 			unlink($zipLocation . $zipFile);
 
 			echo "\nFinished deploying $repository.\n</pre>";
+			$this->loginfo($config::VERBOSE, " Finished deploying $repository.");
 		}
 
 
@@ -185,6 +193,7 @@ Class Deploy {
 			if ( $config::REQUIRE_AUTHENTICATION && $config::DEPLOY_AUTH_KEY != $key) {
 				http_response_code(401);
 				echo " # Unauthorized";
+				$this->loginfo($config::VERBOSE, " # Unauthorized");
 				return false;
 			}
 
@@ -210,6 +219,7 @@ Class Deploy {
 					echo " * Processing file $file\n";
 					if(!$json || !$this->deployChangeSet( $config, $json )) {
 						echo " # Could not process file $file!\n";
+						$this->loginfo($config::VERBOSE, " # Could not process file $file!");
 						$del = false;
 					}
 					flush();
@@ -228,9 +238,11 @@ Class Deploy {
 			foreach($rmdirs as $dir => $name) {
 				if(@rmdir($dir)) {
 					echo " * Removed empty directory $name\n";
+					$this->loginfo($config::VERBOSE, " * Removed empty directory $name");
 				}
 			}
 			echo "\nFinished processing commits.\n</pre>";
+			$this->loginfo($config::VERBOSE, " Finished processing commits.");
 		}
 
 
@@ -250,6 +262,7 @@ Class Deploy {
 			if( !$o ) {
 				// could not parse ?
 				echo "    ! Invalid JSON file\n";
+				$this->loginfo($config::VERBOSE, " ! Invalid JSON file");
 				return false;
 			}
 
@@ -260,6 +273,7 @@ Class Deploy {
 			} else {
 				// unknown repository ?
 				echo "    ! Repository not configured for sync: {$o->repository->name}\n";
+				$this->loginfo($config::VERBOSE, " ! Repository not configured for sync: {$o->repository->name}");
 				return false;
 			}
 
@@ -317,56 +331,57 @@ Class Deploy {
 				// Github post info doesn't include branch name so we assume it's correct...
 				// And this means we can't do the whole 'pending' thing. (maybe.  Dunno.  sorry.)
 				$this->loginfo($config::VERBOSE, "    > Change-set: " . trim($commit->message) . "\n");
-						$files_added = array_merge($pending_add, $commit->added);
-						$files_removed = array_merge($pending_rem, $commit->removed);
-						$files_modified = array_merge($pending_mod, $commit->modified);
+				$files_added = array_merge($pending_add, $commit->added);
+				$files_removed = array_merge($pending_rem, $commit->removed);
+				$files_modified = array_merge($pending_mod, $commit->modified);
 
-						$files_added_and_modified = array_merge($files_added, $files_modified);
+				$files_added_and_modified = array_merge($files_added, $files_modified);
 
 
-						foreach ($files_added_and_modified as $file) {
-							//add_mod_file($file_modded);
-							if( empty($processed[$file]) ) {
-								$processed[$file] = 1; // mark as processed
-								$contents = $this->getFileContents($config, $baseUrl . $apiUrl . $repoUrl . $rawUrl . $branchUrl . $file);
-								//error_log('contents ' . $contents);
-								if( $contents == 'Not Found' ) {
-									$this->loginfo($config::VERBOSE, 'File ' . $file . " contents not found.  Trying again...\n");
-									// try one more time
-									$contents = $this->getFileContents($config, $baseUrl . $apiUrl . $repoUrl . $rawUrl . $branchUrl . $file);
-								}
-
-								if( $contents != 'Not Found' && $contents !== false ) {
-									if( !is_dir( dirname($deployLocation . $file) ) ) {
-										// attempt to create the directory structure first
-										mkdir( dirname($deployLocation . $file), 0755, true );
-									}
-									file_put_contents( $deployLocation . $file, $contents );
-									$this->loginfo($config::VERBOSE, "      - Synchronized $file\n");
-
-									if ($config::CHECK_FILES) {
-										$file_to_check = $deployLocation . $file;
-										$this->check_file_exists($file_to_check, false, $config::VERBOSE);
-									}
-
-								} else {
-									echo "      ! Could not get file contents for $file\n";
-									flush();
-								}
-							}
+				foreach ($files_added_and_modified as $file) {
+					//add_mod_file($file_modded);
+					if( empty($processed[$file]) ) {
+						$processed[$file] = 1; // mark as processed
+						$contents = $this->getFileContents($config, $baseUrl . $apiUrl . $repoUrl . $rawUrl . $branchUrl . $file);
+						//error_log('contents ' . $contents);
+						if( $contents == 'Not Found' ) {
+							$this->loginfo($config::VERBOSE, 'File ' . $file . " contents not found.  Trying again...\n");
+							// try one more time
+							$contents = $this->getFileContents($config, $baseUrl . $apiUrl . $repoUrl . $rawUrl . $branchUrl . $file);
 						}
 
-						foreach ($files_removed as $file) {
-							//remove_file($file_removed);
-							unlink( $deployLocation . $file );
-							$processed[$file] = 0; // to allow for subsequent re-creating of this file
-							$rmdirs[dirname($deployLocation . $file)] = dirname($file);
-							$this->loginfo($config::VERBOSE, "      - Removed $file\n");
+						if( $contents != 'Not Found' && $contents !== false ) {
+							if( !is_dir( dirname($deployLocation . $file) ) ) {
+								// attempt to create the directory structure first
+								mkdir( dirname($deployLocation . $file), 0755, true );
+							}
+							file_put_contents( $deployLocation . $file, $contents );
+							$this->loginfo($config::VERBOSE, "      - Synchronized $file\n");
+
 							if ($config::CHECK_FILES) {
 								$file_to_check = $deployLocation . $file;
-								$this->check_file_exists($file_to_check, true, $config::VERBOSE);
+								$this->check_file_exists($file_to_check, false, $config::VERBOSE);
+							}
+
+							} else {
+								echo "      ! Could not get file contents for $file\n";
+								$this->loginfo($config::VERBOSE, " ! Could not get file contents for $file");
+								flush();
 							}
 						}
+					}
+
+					foreach ($files_removed as $file) {
+						//remove_file($file_removed);
+						unlink( $deployLocation . $file );
+						$processed[$file] = 0; // to allow for subsequent re-creating of this file
+						$rmdirs[dirname($deployLocation . $file)] = dirname($file);
+						$this->loginfo($config::VERBOSE, "      - Removed $file\n");
+						if ($config::CHECK_FILES) {
+							$file_to_check = $deployLocation . $file;
+							$this->check_file_exists($file_to_check, true, $config::VERBOSE);
+						}
+					}
 
 
 					// clean pending files, if any
