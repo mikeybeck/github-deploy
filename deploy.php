@@ -330,6 +330,7 @@ Class Deploy {
 			foreach($o->commits as $commit) {
 				// Github post info doesn't include branch name so we assume it's correct...
 				// And this means we can't do the whole 'pending' thing. (maybe.  Dunno.  sorry.)
+				$this->loginfo($config::VERBOSE, " -------------------- ");
 				$this->loginfo($config::VERBOSE, "    > Change-set: " . trim($commit->message) . "\n");
 				$files_added = array_merge($pending_add, $commit->added);
 				$files_removed = array_merge($pending_rem, $commit->removed);

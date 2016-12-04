@@ -101,13 +101,13 @@
 
             var text = document.getElementById('log').innerHTML;
 
-            var mySplitResult = text.split(/(^.*?Change-set:.*$)/mg);
+            var mySplitResult = text.split(/(^.*?--------------------.*$)/mg);
 
             var commits = [];
 
             for(var i = 0; i < mySplitResult.length; i++) {
                 //console.log("<br /> Element " + i + " = " + mySplitResult[i]);
-                if (mySplitResult[i].indexOf("Change-set:") !== -1 ) {
+                if (mySplitResult[i].indexOf("--------------------") !== -1 ) {
                     commits.push("<div class='commit-info'><b>" + mySplitResult[i] + "</b>" + mySplitResult[i+1] + "</div>");
                     i++;
                 } 
